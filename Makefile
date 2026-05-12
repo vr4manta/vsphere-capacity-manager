@@ -106,3 +106,32 @@ deploy-deployment:
 .PHONY: apply-test-manifests
 apply-test-manifests:
 	oc apply -n $(TEST_NAMESPACE) -f test/manifests/
+
+##@ Console Plugin
+
+PLUGIN_IMAGE ?= quay.io/ocp-splat/vcm-console-plugin:latest
+KUBECONFIG ?= $(HOME)/kubeconfigs/kubeconfig.vsphere
+
+.PHONY: plugin-install
+plugin-install: ## Install console plugin dependencies
+	cd console-plugin && npm install
+
+.PHONY: plugin-build
+plugin-build: ## Build console plugin
+	cd console-plugin && npm run build
+
+.PHONY: plugin-image
+plugin-image: plugin-build ## Build console plugin container image
+	$(ENGINE) build -t $(PLUGIN_IMAGE) -f console-plugin/Dockerfile .
+
+.PHONY: plugin-push
+plugin-push: plugin-image ## Push console plugin image to registry
+	$(ENGINE) push $(PLUGIN_IMAGE)
+
+.PHONY: deploy-plugin
+deploy-plugin: ## Deploy console plugin to cluster
+	oc apply -k console-plugin/manifests/
+
+.PHONY: plugin-dev
+plugin-dev: ## Start console plugin development server
+	cd console-plugin && npm start

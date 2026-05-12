@@ -8,6 +8,40 @@ capactiy.
 
 User-focused diagrams and walkthroughs: [doc/README.md](doc/README.md) (see [How it works](doc/how-it-works.md)).
 
+## Console Plugin
+
+The vSphere Capacity Manager includes an **OpenShift Console Plugin** that provides a web-based UI for managing capacity resources.
+
+### Features
+
+- **Dashboard**: Real-time capacity metrics and utilization charts powered by Prometheus
+- **Pool Management**: View, create, edit, and delete resource pools with visual capacity indicators
+- **Lease Management**: Create and monitor resource leases with detailed status tracking
+- **Network Management**: Configure and manage vSphere network resources
+- **Full CRUD Operations**: Complete create, read, update, and delete support for all resources
+
+### Quick Start
+
+1. **Install the plugin**:
+   ```bash
+   oc apply -k console-plugin/manifests/
+   oc patch consoles.operator.openshift.io cluster \
+     --type merge \
+     -p '{"spec":{"plugins":["vsphere-capacity-manager"]}}'
+   ```
+
+2. **Access in OpenShift Console**:
+   - Navigate to **vSphere Capacity** in the left menu
+   - View Dashboard, Pools, Leases, and Networks
+
+### Documentation
+
+- **[Installation Guide](console-plugin/INSTALL.md)** - Deploy the plugin to your cluster
+- **[User Guide](console-plugin/USER_GUIDE.md)** - Complete usage instructions
+- **[Developer Guide](console-plugin/DEVELOPER_GUIDE.md)** - Contributing and development
+
+For detailed information, see the [console-plugin directory](console-plugin/).
+
 ## Terminology
 
 ### Pools
