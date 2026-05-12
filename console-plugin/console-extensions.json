@@ -1,0 +1,142 @@
+[
+  {
+    "type": "console.navigation/section",
+    "properties": {
+      "id": "vsphere-capacity-manager",
+      "name": "vSphere Capacity",
+      "insertAfter": "workloads"
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "vcm-dashboard",
+      "section": "vsphere-capacity-manager",
+      "name": "Dashboard",
+      "href": "/vcm/dashboard"
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "vcm-pools",
+      "section": "vsphere-capacity-manager",
+      "name": "Pools",
+      "href": "/vcm/pools"
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "vcm-leases",
+      "section": "vsphere-capacity-manager",
+      "name": "Leases",
+      "href": "/vcm/leases"
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "vcm-networks",
+      "section": "vsphere-capacity-manager",
+      "name": "Networks",
+      "href": "/vcm/networks"
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/dashboard",
+      "component": { "$codeRef": "CapacityDashboard.CapacityDashboard" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/pools",
+      "component": { "$codeRef": "PoolList.PoolList" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/pools/new",
+      "component": { "$codeRef": "PoolForm.PoolForm" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/pools/:namespace/:name",
+      "component": { "$codeRef": "PoolDetail.PoolDetail" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/pools/:namespace/:name/edit",
+      "component": { "$codeRef": "PoolForm.PoolForm" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/leases",
+      "component": { "$codeRef": "LeaseList.LeaseList" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/leases/new",
+      "component": { "$codeRef": "LeaseForm.LeaseForm" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/leases/:namespace/:name",
+      "component": { "$codeRef": "LeaseDetail.LeaseDetail" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/networks",
+      "component": { "$codeRef": "NetworkList.NetworkList" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/networks/new",
+      "component": { "$codeRef": "NetworkForm.NetworkForm" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/networks/:namespace/:name",
+      "component": { "$codeRef": "NetworkDetail.NetworkDetail" }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/vcm/networks/:namespace/:name/edit",
+      "component": { "$codeRef": "NetworkForm.NetworkForm" }
+    }
+  }
+]

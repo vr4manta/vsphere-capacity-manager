@@ -1,0 +1,661 @@
+import * as React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Page,
+  PageSection,
+  Title,
+  Wizard,
+  WizardStep,
+  WizardFooter,
+  Button,
+  Alert,
+  Form,
+  FormGroup,
+  TextInput,
+  NumberInput,
+  Checkbox,
+  Grid,
+  GridItem,
+  Card,
+  CardBody,
+  TextArea,
+} from '@patternfly/react-core';
+import { usePoolWatch } from '@hooks/useK8sWatchResource';
+import { createPool, updatePool } from '@api/k8s-client';
+import { VCM_NAMESPACE } from '@utils/constants';
+import {
+  validatePoolBasicInfo,
+  validatePoolCapacity,
+  validatePoolTopology,
+  getFieldError,
+  ValidationError,
+} from '@utils/validation';
+import type { Pool } from '@vcm-types/pool';
+import type { Taint, TaintEffect } from '@vcm-types/common';
+
+interface PoolFormData extends Partial<Pool['spec']> {
+  metadataName?: string;
+}
+
+export const PoolForm: React.FC = () => {
+  const { name, namespace = VCM_NAMESPACE } = useParams<{ name?: string; namespace?: string }>();
+  const navigate = useNavigate();
+  const isEdit = !!name;
+  const [existingPool, loaded] = usePoolWatch(name!, namespace);
+
+  const [formData, setFormData] = React.useState<PoolFormData>({
+    name: '',
+    server: '',
+    region: '',
+    zone: '',
+    shortName: '',
+    vcpus: 0,
+    memory: 0,
+    storage: 0,
+    overCommitRatio: '1.0',
+    exclude: false,
+    noSchedule: false,
+    taints: [],
+    topology: {
+      datacenter: '',
+      computeCluster: '',
+      datastore: '',
+      networks: [],
+      folder: '',
+      resourcePool: '',
+      template: '',
+    },
+  });
+
+  const [errors, setErrors] = React.useState<ValidationError[]>([]);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [networkInput, setNetworkInput] = React.useState('');
+  const [taintKey, setTaintKey] = React.useState('');
+  const [taintValue, setTaintValue] = React.useState('');
+  const [taintEffect, setTaintEffect] = React.useState<TaintEffect>('NoSchedule');
+
+  // Load existing pool data for edit mode
+  React.useEffect(() => {
+    if (isEdit && loaded && existingPool) {
+      setFormData({
+        ...existingPool.spec,
+        metadataName: existingPool.metadata.name,
+      });
+    }
+  }, [isEdit, loaded, existingPool]);
+
+  const updateField = <K extends keyof PoolFormData>(field: K, value: PoolFormData[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear errors for this field
+    setErrors((prev) => prev.filter((e) => e.field !== field));
+  };
+
+  const addNetwork = () => {
+    if (networkInput.trim()) {
+      const networks = [...(formData.topology?.networks || []), networkInput.trim()];
+      updateField('topology', { ...formData.topology, networks });
+      setNetworkInput('');
+    }
+  };
+
+  const removeNetwork = (index: number) => {
+    const networks = [...(formData.topology?.networks || [])];
+    networks.splice(index, 1);
+    updateField('topology', { ...formData.topology, networks });
+  };
+
+  const addTaint = () => {
+    if (taintKey.trim()) {
+      const newTaint: Taint = {
+        key: taintKey.trim(),
+        value: taintValue.trim(),
+        effect: taintEffect,
+      };
+      updateField('taints', [...(formData.taints || []), newTaint]);
+      setTaintKey('');
+      setTaintValue('');
+      setTaintEffect('NoSchedule');
+    }
+  };
+
+  const removeTaint = (index: number) => {
+    const taints = [...(formData.taints || [])];
+    taints.splice(index, 1);
+    updateField('taints', taints);
+  };
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+
+    // Validate all steps
+    const allErrors = [
+      ...validatePoolBasicInfo(formData),
+      ...validatePoolCapacity(formData),
+      ...validatePoolTopology(formData),
+    ];
+
+    if (allErrors.length > 0) {
+      setErrors(allErrors);
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      const pool: Pool = {
+        apiVersion: 'vspherecapacitymanager.splat.io/v1',
+        kind: 'Pool',
+        metadata: {
+          name: isEdit ? existingPool!.metadata.name : formData.metadataName || formData.name,
+          namespace,
+        },
+        spec: {
+          name: formData.name!,
+          server: formData.server!,
+          region: formData.region!,
+          zone: formData.zone!,
+          shortName: formData.shortName,
+          vcpus: formData.vcpus!,
+          memory: formData.memory!,
+          storage: formData.storage!,
+          overCommitRatio: formData.overCommitRatio!,
+          exclude: formData.exclude!,
+          noSchedule: formData.noSchedule,
+          taints: formData.taints,
+          topology: formData.topology!,
+        },
+        status: isEdit ? existingPool!.status : {
+          'vcpus-available': formData.vcpus!,
+          'memory-available': formData.memory!,
+          'datastore-available': formData.storage!,
+          'network-available': formData.topology?.networks?.length || 0,
+          'lease-count': 0,
+          initialized: false,
+        },
+      };
+
+      if (isEdit) {
+        await updatePool(pool, namespace);
+      } else {
+        await createPool(pool, namespace);
+      }
+
+      navigate('/vcm/pools');
+    } catch (err: any) {
+      setSubmitError(err.message || `Failed to ${isEdit ? 'update' : 'create'} pool`);
+      setSubmitting(false);
+    }
+  };
+
+  const steps: WizardStep[] = [
+    {
+      name: 'Basic Information',
+      component: (
+        <Form>
+          <FormGroup
+            label="Metadata Name"
+            isRequired
+            helperText="Kubernetes resource name (cannot be changed after creation)"
+            fieldId="metadata-name"
+          >
+            <TextInput
+              id="metadata-name"
+              value={isEdit ? existingPool?.metadata.name : formData.metadataName}
+              onChange={(_, value) => updateField('metadataName', value)}
+              isDisabled={isEdit}
+              validated={getFieldError(errors, 'metadataName') ? 'error' : 'default'}
+            />
+            {getFieldError(errors, 'metadataName') && (
+              <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                {getFieldError(errors, 'metadataName')}
+              </div>
+            )}
+          </FormGroup>
+
+          <FormGroup
+            label="Name"
+            isRequired
+            helperText="Arbitrary but unique name of the failure domain (1-256 chars)"
+            fieldId="name"
+          >
+            <TextInput
+              id="name"
+              value={formData.name}
+              onChange={(_, value) => updateField('name', value)}
+              validated={getFieldError(errors, 'name') ? 'error' : 'default'}
+            />
+            {getFieldError(errors, 'name') && (
+              <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                {getFieldError(errors, 'name')}
+              </div>
+            )}
+          </FormGroup>
+
+          <FormGroup label="Short Name" helperText="Optional short name (1-30 chars, alphanumeric + -_)" fieldId="short-name">
+            <TextInput
+              id="short-name"
+              value={formData.shortName}
+              onChange={(_, value) => updateField('shortName', value)}
+              validated={getFieldError(errors, 'shortName') ? 'error' : 'default'}
+            />
+            {getFieldError(errors, 'shortName') && (
+              <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                {getFieldError(errors, 'shortName')}
+              </div>
+            )}
+          </FormGroup>
+
+          <FormGroup label="Server" isRequired helperText="vCenter FQDN or IP address" fieldId="server">
+            <TextInput
+              id="server"
+              value={formData.server}
+              onChange={(_, value) => updateField('server', value)}
+              validated={getFieldError(errors, 'server') ? 'error' : 'default'}
+            />
+            {getFieldError(errors, 'server') && (
+              <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                {getFieldError(errors, 'server')}
+              </div>
+            )}
+          </FormGroup>
+
+          <Grid hasGutter>
+            <GridItem span={6}>
+              <FormGroup label="Region" isRequired helperText="Region tag name from vCenter" fieldId="region">
+                <TextInput
+                  id="region"
+                  value={formData.region}
+                  onChange={(_, value) => updateField('region', value)}
+                  validated={getFieldError(errors, 'region') ? 'error' : 'default'}
+                />
+                {getFieldError(errors, 'region') && (
+                  <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                    {getFieldError(errors, 'region')}
+                  </div>
+                )}
+              </FormGroup>
+            </GridItem>
+            <GridItem span={6}>
+              <FormGroup label="Zone" isRequired helperText="Zone tag name in vCenter" fieldId="zone">
+                <TextInput
+                  id="zone"
+                  value={formData.zone}
+                  onChange={(_, value) => updateField('zone', value)}
+                  validated={getFieldError(errors, 'zone') ? 'error' : 'default'}
+                />
+                {getFieldError(errors, 'zone') && (
+                  <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                    {getFieldError(errors, 'zone')}
+                  </div>
+                )}
+              </FormGroup>
+            </GridItem>
+          </Grid>
+        </Form>
+      ),
+    },
+    {
+      name: 'Capacity',
+      component: (
+        <Form>
+          <Grid hasGutter>
+            <GridItem span={6}>
+              <FormGroup label="vCPUs" isRequired helperText="Number of virtual CPUs" fieldId="vcpus">
+                <NumberInput
+                  id="vcpus"
+                  value={formData.vcpus}
+                  onMinus={() => updateField('vcpus', Math.max(0, (formData.vcpus || 0) - 1))}
+                  onChange={(event) => {
+                    const value = Number((event.target as HTMLInputElement).value);
+                    updateField('vcpus', value);
+                  }}
+                  onPlus={() => updateField('vcpus', (formData.vcpus || 0) + 1)}
+                  min={0}
+                  validated={getFieldError(errors, 'vcpus') ? 'error' : 'default'}
+                />
+                {getFieldError(errors, 'vcpus') && (
+                  <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                    {getFieldError(errors, 'vcpus')}
+                  </div>
+                )}
+              </FormGroup>
+            </GridItem>
+            <GridItem span={6}>
+              <FormGroup label="Memory (GB)" isRequired helperText="Amount of memory in GB" fieldId="memory">
+                <NumberInput
+                  id="memory"
+                  value={formData.memory}
+                  onMinus={() => updateField('memory', Math.max(0, (formData.memory || 0) - 1))}
+                  onChange={(event) => {
+                    const value = Number((event.target as HTMLInputElement).value);
+                    updateField('memory', value);
+                  }}
+                  onPlus={() => updateField('memory', (formData.memory || 0) + 1)}
+                  min={0}
+                  validated={getFieldError(errors, 'memory') ? 'error' : 'default'}
+                />
+                {getFieldError(errors, 'memory') && (
+                  <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                    {getFieldError(errors, 'memory')}
+                  </div>
+                )}
+              </FormGroup>
+            </GridItem>
+          </Grid>
+
+          <Grid hasGutter>
+            <GridItem span={6}>
+              <FormGroup label="Storage (GB)" isRequired helperText="Amount of storage in GB" fieldId="storage">
+                <NumberInput
+                  id="storage"
+                  value={formData.storage}
+                  onMinus={() => updateField('storage', Math.max(0, (formData.storage || 0) - 1))}
+                  onChange={(event) => {
+                    const value = Number((event.target as HTMLInputElement).value);
+                    updateField('storage', value);
+                  }}
+                  onPlus={() => updateField('storage', (formData.storage || 0) + 1)}
+                  min={0}
+                  validated={getFieldError(errors, 'storage') ? 'error' : 'default'}
+                />
+                {getFieldError(errors, 'storage') && (
+                  <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                    {getFieldError(errors, 'storage')}
+                  </div>
+                )}
+              </FormGroup>
+            </GridItem>
+            <GridItem span={6}>
+              <FormGroup label="Overcommit Ratio" helperText="CPU overcommit ratio (default: 1.0)" fieldId="overcommit">
+                <TextInput
+                  id="overcommit"
+                  value={formData.overCommitRatio}
+                  onChange={(_, value) => updateField('overCommitRatio', value)}
+                  validated={getFieldError(errors, 'overCommitRatio') ? 'error' : 'default'}
+                />
+                {getFieldError(errors, 'overCommitRatio') && (
+                  <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                    {getFieldError(errors, 'overCommitRatio')}
+                  </div>
+                )}
+              </FormGroup>
+            </GridItem>
+          </Grid>
+        </Form>
+      ),
+    },
+    {
+      name: 'Topology',
+      component: (
+        <Form>
+          <FormGroup label="Datacenter" isRequired helperText="vCenter datacenter name" fieldId="datacenter">
+            <TextInput
+              id="datacenter"
+              value={formData.topology?.datacenter}
+              onChange={(_, value) =>
+                updateField('topology', { ...formData.topology, datacenter: value })
+              }
+              validated={getFieldError(errors, 'topology.datacenter') ? 'error' : 'default'}
+            />
+            {getFieldError(errors, 'topology.datacenter') && (
+              <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                {getFieldError(errors, 'topology.datacenter')}
+              </div>
+            )}
+          </FormGroup>
+
+          <FormGroup
+            label="Compute Cluster"
+            isRequired
+            helperText="Absolute path: /<datacenter>/host/<cluster>"
+            fieldId="compute-cluster"
+          >
+            <TextInput
+              id="compute-cluster"
+              value={formData.topology?.computeCluster}
+              onChange={(_, value) =>
+                updateField('topology', { ...formData.topology, computeCluster: value })
+              }
+              validated={getFieldError(errors, 'topology.computeCluster') ? 'error' : 'default'}
+            />
+            {getFieldError(errors, 'topology.computeCluster') && (
+              <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                {getFieldError(errors, 'topology.computeCluster')}
+              </div>
+            )}
+          </FormGroup>
+
+          <FormGroup
+            label="Datastore"
+            isRequired
+            helperText="Absolute path: /<datacenter>/datastore/<datastore>"
+            fieldId="datastore"
+          >
+            <TextInput
+              id="datastore"
+              value={formData.topology?.datastore}
+              onChange={(_, value) =>
+                updateField('topology', { ...formData.topology, datastore: value })
+              }
+              validated={getFieldError(errors, 'topology.datastore') ? 'error' : 'default'}
+            />
+            {getFieldError(errors, 'topology.datastore') && (
+              <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                {getFieldError(errors, 'topology.datastore')}
+              </div>
+            )}
+          </FormGroup>
+
+          <FormGroup label="Folder" helperText="Optional: /<datacenter>/vm/<folder>" fieldId="folder">
+            <TextInput
+              id="folder"
+              value={formData.topology?.folder}
+              onChange={(_, value) => updateField('topology', { ...formData.topology, folder: value })}
+            />
+          </FormGroup>
+
+          <FormGroup label="Resource Pool" helperText="Optional: /<datacenter>/host/<cluster>/Resources/<pool>" fieldId="resource-pool">
+            <TextInput
+              id="resource-pool"
+              value={formData.topology?.resourcePool}
+              onChange={(_, value) =>
+                updateField('topology', { ...formData.topology, resourcePool: value })
+              }
+            />
+          </FormGroup>
+
+          <FormGroup label="Template" helperText="Optional: VM/template inventory path" fieldId="template">
+            <TextInput
+              id="template"
+              value={formData.topology?.template}
+              onChange={(_, value) =>
+                updateField('topology', { ...formData.topology, template: value })
+              }
+            />
+          </FormGroup>
+
+          <FormGroup label="Networks" isRequired helperText="Port group network paths (min 1 required)" fieldId="networks">
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <TextInput
+                id="network-input"
+                value={networkInput}
+                onChange={(_, value) => setNetworkInput(value)}
+                placeholder="Enter network path"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addNetwork();
+                  }
+                }}
+              />
+              <Button onClick={addNetwork}>Add</Button>
+            </div>
+            {formData.topology?.networks && formData.topology.networks.length > 0 && (
+              <Card isCompact>
+                <CardBody>
+                  {formData.topology.networks.map((network, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '4px 0',
+                        borderBottom:
+                          idx < formData.topology!.networks!.length - 1
+                            ? '1px solid #d2d2d2'
+                            : 'none',
+                      }}
+                    >
+                      <span style={{ fontSize: '14px' }}>{network}</span>
+                      <Button variant="link" isDanger onClick={() => removeNetwork(idx)}>
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </CardBody>
+              </Card>
+            )}
+            {getFieldError(errors, 'topology.networks') && (
+              <div style={{ color: '#c9190b', fontSize: '14px', marginTop: '4px' }}>
+                {getFieldError(errors, 'topology.networks')}
+              </div>
+            )}
+          </FormGroup>
+        </Form>
+      ),
+    },
+    {
+      name: 'Advanced',
+      component: (
+        <Form>
+          <FormGroup fieldId="exclude">
+            <Checkbox
+              id="exclude"
+              label="Exclude from default pools"
+              isChecked={formData.exclude}
+              onChange={(_, checked) => updateField('exclude', checked)}
+            />
+          </FormGroup>
+
+          <FormGroup fieldId="no-schedule">
+            <Checkbox
+              id="no-schedule"
+              label="NoSchedule (block new leases)"
+              isChecked={formData.noSchedule}
+              onChange={(_, checked) => updateField('noSchedule', checked)}
+            />
+          </FormGroup>
+
+          <FormGroup label="Taints" helperText="Taints applied to this pool (require matching tolerations on leases)" fieldId="taints">
+            <Grid hasGutter>
+              <GridItem span={4}>
+                <TextInput
+                  placeholder="Key"
+                  value={taintKey}
+                  onChange={(_, value) => setTaintKey(value)}
+                />
+              </GridItem>
+              <GridItem span={4}>
+                <TextInput
+                  placeholder="Value (optional)"
+                  value={taintValue}
+                  onChange={(_, value) => setTaintValue(value)}
+                />
+              </GridItem>
+              <GridItem span={2}>
+                <select
+                  value={taintEffect}
+                  onChange={(e) => setTaintEffect(e.target.value as TaintEffect)}
+                  style={{
+                    width: '100%',
+                    height: '36px',
+                    padding: '0 8px',
+                    border: '1px solid #d2d2d2',
+                    borderRadius: '3px',
+                  }}
+                >
+                  <option value="NoSchedule">NoSchedule</option>
+                  <option value="PreferNoSchedule">PreferNoSchedule</option>
+                </select>
+              </GridItem>
+              <GridItem span={2}>
+                <Button onClick={addTaint} isBlock>
+                  Add Taint
+                </Button>
+              </GridItem>
+            </Grid>
+
+            {formData.taints && formData.taints.length > 0 && (
+              <Card isCompact style={{ marginTop: '8px' }}>
+                <CardBody>
+                  {formData.taints.map((taint, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '4px 0',
+                        borderBottom:
+                          idx < formData.taints!.length - 1 ? '1px solid #d2d2d2' : 'none',
+                      }}
+                    >
+                      <span style={{ fontSize: '14px' }}>
+                        {taint.key}
+                        {taint.value ? `=${taint.value}` : ''}:{taint.effect}
+                      </span>
+                      <Button variant="link" isDanger onClick={() => removeTaint(idx)}>
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </CardBody>
+              </Card>
+            )}
+          </FormGroup>
+        </Form>
+      ),
+    },
+    {
+      name: 'Review',
+      component: (
+        <div>
+          {submitError && (
+            <Alert variant="danger" title="Submission failed" isInline style={{ marginBottom: '1rem' }}>
+              {submitError}
+            </Alert>
+          )}
+          <Card>
+            <CardBody>
+              <Title headingLevel="h3" size="lg">
+                Review Pool Configuration
+              </Title>
+              <pre style={{ marginTop: '1rem', fontSize: '12px', backgroundColor: '#f5f5f5', padding: '1rem', borderRadius: '4px', overflow: 'auto' }}>
+                {JSON.stringify(formData, null, 2)}
+              </pre>
+            </CardBody>
+          </Card>
+        </div>
+      ),
+      nextButtonText: 'Submit',
+    },
+  ];
+
+  return (
+    <Page>
+      <PageSection variant="light">
+        <Title headingLevel="h1" size="2xl">
+          {isEdit ? 'Edit Pool' : 'Create Pool'}
+        </Title>
+      </PageSection>
+      <PageSection>
+        <Wizard
+          steps={steps}
+          onClose={() => navigate('/vcm/pools')}
+          onSave={handleSubmit}
+          isFinishedWizardDisabled={submitting}
+        />
+      </PageSection>
+    </Page>
+  );
+};

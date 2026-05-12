@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: vsphere-infra-helpers
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - deployment.yaml
+  - service.yaml
+  - console-plugin.yaml
+
+images:
+  - name: quay.io/openshift-splat-team/vsphere-capacity-manager-console-plugin
+    newName: quay.io/rhn_support_ngirard/vcm-console-plugin
+    newTag: latest

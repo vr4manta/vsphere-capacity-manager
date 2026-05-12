@@ -1,0 +1,31 @@
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: vsphere-capacity-manager
+  labels:
+    app: vsphere-capacity-manager-console-plugin
+    app.kubernetes.io/name: vsphere-capacity-manager-console-plugin
+    app.kubernetes.io/component: console-plugin
+    app.kubernetes.io/part-of: vsphere-capacity-manager
+spec:
+  displayName: vSphere Capacity Manager
+  backend:
+    type: Service
+    service:
+      name: vsphere-capacity-manager-console-plugin
+      namespace: vsphere-infra-helpers
+      port: 9443
+      basePath: /
+  i18n:
+    loadType: Preload
+  proxy:
+    # Proxy for Prometheus metrics
+    - type: Service
+      alias: prometheus-tenancy
+      authorize: true
+      endpoint:
+        type: Service
+        service:
+          name: metrics
+          namespace: vsphere-infra-helpers
+          port: 8080

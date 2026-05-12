@@ -1,0 +1,88 @@
+{
+  "name": "vsphere-capacity-manager-console-plugin",
+  "version": "1.0.0",
+  "description": "OpenShift Console Dynamic Plugin for vSphere Capacity Manager",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "yarn clean && NODE_ENV=production yarn webpack",
+    "build-dev": "yarn clean && yarn webpack",
+    "start": "yarn webpack serve --progress",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "webpack": "TS_NODE_PROJECT=tsconfig.webpack.json node -r ts-node/register ./node_modules/.bin/webpack"
+  },
+  "keywords": [
+    "openshift",
+    "console",
+    "plugin",
+    "vsphere",
+    "capacity-manager"
+  ],
+  "author": "OpenShift vSphere Team",
+  "devDependencies": {
+    "@openshift-console/dynamic-plugin-sdk": "4.22-latest",
+    "@openshift-console/dynamic-plugin-sdk-webpack": "4.22-latest",
+    "@patternfly/react-charts": "^6.4.3",
+    "@patternfly/react-core": "^6.4.3",
+    "@patternfly/react-icons": "^6.4.0",
+    "@patternfly/react-table": "^6.4.3",
+    "@swc/core": "^1.15.32",
+    "@swc/jest": "^0.2.39",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.28",
+    "axios": "^1.6.7",
+    "copy-webpack-plugin": "^14.0.0",
+    "css-loader": "^7.1.4",
+    "eslint": "^9.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "fork-ts-checker-webpack-plugin": "^9.1.0",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "prettier": "^3.8.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-query": "^3.39.3",
+    "react-router": "~7.13.1",
+    "sass": "^1.99.0",
+    "sass-loader": "^16.0.8",
+    "style-loader": "^4.0.0",
+    "swc-loader": "^0.2.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "webpack": "^5.106.2",
+    "webpack-cli": "^7.0.2",
+    "webpack-dev-server": "^5.2.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "consolePlugin": {
+    "name": "vsphere-capacity-manager",
+    "version": "1.0.0",
+    "displayName": "vSphere Capacity Manager",
+    "description": "OpenShift Console plugin for managing vSphere infrastructure capacity",
+    "exposedModules": {
+      "CapacityDashboard": "./components/dashboard/CapacityDashboard",
+      "PoolList": "./components/pools/PoolList",
+      "PoolDetail": "./components/pools/PoolDetail",
+      "PoolForm": "./components/pools/PoolForm",
+      "LeaseList": "./components/leases/LeaseList",
+      "LeaseDetail": "./components/leases/LeaseDetail",
+      "LeaseForm": "./components/leases/LeaseForm",
+      "NetworkList": "./components/networks/NetworkList",
+      "NetworkDetail": "./components/networks/NetworkDetail",
+      "NetworkForm": "./components/networks/NetworkForm"
+    },
+    "dependencies": {
+      "@console/pluginAPI": ">=4.22.0-0"
+    }
+  }
+}
