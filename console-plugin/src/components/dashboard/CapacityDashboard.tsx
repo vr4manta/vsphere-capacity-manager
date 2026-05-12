@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router';
+import { QueryClient, QueryClientProvider } from 'react-query';
 import {
   Page,
   PageSection,
@@ -32,6 +33,16 @@ import {
 } from '@hooks/usePrometheusQuery';
 import { parseInstantValue, parseRangeValues, sumInstantValues } from '@api/prometheus-client';
 import { formatCPUs, formatGB, formatUtilization } from '@utils/formatting';
+
+// Create QueryClient instance for react-query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const MetricCard: React.FC<{
   title: string;
@@ -199,7 +210,7 @@ const NetworkTypeDonut: React.FC<{
   );
 };
 
-export const CapacityDashboard: React.FC = () => {
+const CapacityDashboardInner: React.FC = () => {
   const navigate = useNavigate();
 
   // Fetch all metrics
@@ -386,5 +397,14 @@ export const CapacityDashboard: React.FC = () => {
         </Grid>
       </PageSection>
     </Page>
+  );
+};
+
+// Wrap the component with QueryClientProvider for react-query
+export const CapacityDashboard: React.FC = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <CapacityDashboardInner />
+    </QueryClientProvider>
   );
 };
