@@ -1,0 +1,54 @@
+{
+  "extends": [
+    "stylelint-config-standard-scss",
+    "stylelint-config-prettier-scss"
+  ],
+  "plugins": [
+    "stylelint-plugin-patternfly"
+  ],
+  "rules": {
+    "color-no-hex": true,
+    "selector-class-pattern": [
+      "^(vsphere-capacity-manager__|pf-)",
+      {
+        "message": "Class names must be prefixed with 'vsphere-capacity-manager__' or 'pf-' (expected: vsphere-capacity-manager__class-name)"
+      }
+    ],
+    "selector-max-type": [
+      0,
+      {
+        "message": "Do not use naked element selectors (e.g., 'button', 'div'). Use class selectors instead."
+      }
+    ],
+    "declaration-property-value-no-unknown": true,
+    "plugin/no-unsupported-browser-features": [
+      true,
+      {
+        "browsers": ["> 1%", "last 2 versions", "not dead"],
+        "ignore": ["css-nesting"]
+      }
+    ],
+    "scss/at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": ["tailwind", "apply", "layer"]
+      }
+    ],
+    "no-descending-specificity": null,
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": ["global", "local"]
+      }
+    ],
+    "alpha-value-notation": "number",
+    "color-function-notation": "legacy"
+  },
+  "ignoreFiles": [
+    "node_modules/**/*",
+    "dist/**/*",
+    "**/*.tsx",
+    "**/*.ts",
+    "**/*.js"
+  ]
+}
