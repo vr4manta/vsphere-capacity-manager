@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Page, PageSection, Title, Button, Flex, FlexItem } from '@patternfly/react-core';
 import { ResourceList, Column } from '../common/ResourceList';
 import { BooleanBadge } from '../common/StatusBadge';
@@ -8,12 +9,14 @@ import { usePoolsWatch } from '@hooks/useK8sWatchResource';
 import { Pool } from '@vcm-types/pool';
 import { formatResourceUsage } from '@utils/formatting';
 import { VCM_NAMESPACE } from '@utils/constants';
+import { NAMESPACE } from '../../i18n';
 
 /**
  * PoolList displays a table of all Pool resources
  */
 export const PoolList: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
   const [pools, loaded, error] = usePoolsWatch();
 
   const handleRowClick = (pool: Pool) => {
@@ -26,18 +29,18 @@ export const PoolList: React.FC = () => {
 
   const columns: Column<Pool>[] = [
     {
-      title: 'Name',
+      title: t('Name'),
       key: 'name',
       sortable: true,
       render: (pool) => pool.metadata.name || '-',
     },
     {
-      title: 'Region / Zone',
+      title: t('Region / Zone'),
       key: 'region',
       render: (pool) => `${pool.spec.region} / ${pool.spec.zone}`,
     },
     {
-      title: 'vCPUs',
+      title: t('vCPUs'),
       key: 'vcpus',
       sortable: true,
       render: (pool) => (
@@ -49,7 +52,7 @@ export const PoolList: React.FC = () => {
       ),
     },
     {
-      title: 'Memory (GB)',
+      title: t('Memory (GB)'),
       key: 'memory',
       sortable: true,
       render: (pool) => (
@@ -61,7 +64,7 @@ export const PoolList: React.FC = () => {
       ),
     },
     {
-      title: 'Networks',
+      title: t('Networks'),
       key: 'networks',
       render: (pool) =>
         formatResourceUsage(
@@ -70,32 +73,32 @@ export const PoolList: React.FC = () => {
         ),
     },
     {
-      title: 'Leases',
+      title: t('Leases'),
       key: 'leases',
       sortable: true,
       render: (pool) => pool.status?.['lease-count'] || 0,
     },
     {
-      title: 'NoSchedule',
+      title: t('NoSchedule'),
       key: 'noSchedule',
       render: (pool) => (
         <BooleanBadge
           value={pool.spec.noSchedule || false}
-          trueLabel="Disabled"
-          falseLabel="Enabled"
+          trueLabel={t('Disabled')}
+          falseLabel={t('Enabled')}
           trueColor="orange"
           falseColor="green"
         />
       ),
     },
     {
-      title: 'Excluded',
+      title: t('Excluded'),
       key: 'excluded',
       render: (pool) => (
         <BooleanBadge
           value={pool.spec.exclude}
-          trueLabel="Yes"
-          falseLabel="No"
+          trueLabel={t('Yes')}
+          falseLabel={t('No')}
           trueColor="grey"
           falseColor="blue"
         />
@@ -104,28 +107,28 @@ export const PoolList: React.FC = () => {
   ];
 
   return (
-    <Page>
-      <PageSection variant="default">
+    <Page style={{ height: "100%", width: "100%" }}>
+      <PageSection variant="default" style={{ width: "100%" }}>
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <FlexItem>
             <Title headingLevel="h1" size="2xl">
-              Pools
+              {t('Pools')}
             </Title>
           </FlexItem>
           <FlexItem>
             <Button variant="primary" onClick={handleCreateClick}>
-              Create Pool
+              {t('Create Pool')}
             </Button>
           </FlexItem>
         </Flex>
       </PageSection>
-      <PageSection>
+      <PageSection style={{ width: "100%" }}>
         <ResourceList
           data={pools}
           columns={columns}
           loading={!loaded}
           error={error}
-          emptyMessage="No pools found. Create a pool to get started."
+          emptyMessage={t('No pools found. Create a pool to get started.')}
           keyFn={(pool) => pool.metadata.uid || pool.metadata.name || ''}
           onRowClick={handleRowClick}
         />

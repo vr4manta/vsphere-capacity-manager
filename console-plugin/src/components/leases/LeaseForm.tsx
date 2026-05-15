@@ -169,14 +169,14 @@ export const LeaseForm: React.FC = () => {
   };
 
   return (
-    <Page>
-      <PageSection variant="default">
+    <Page style={{ height: "100%", width: "100%" }}>
+      <PageSection variant="default" style={{ width: "100%" }}>
         <Title headingLevel="h1" size="2xl">
           {isEdit ? 'Edit Lease' : 'Create Lease'}
         </Title>
       </PageSection>
 
-      <PageSection>
+      <PageSection style={{ width: "100%" }}>
         {submitError && (
           <Alert
             variant="danger"

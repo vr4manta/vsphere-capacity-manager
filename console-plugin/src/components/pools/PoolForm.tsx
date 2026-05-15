@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Page,
   PageSection,
@@ -8,6 +9,7 @@ import {
   EmptyStateBody,
   Button,
 } from '@patternfly/react-core';
+import { NAMESPACE } from '../../i18n';
 
 /**
  * PoolForm - placeholder for pool creation/editing
@@ -15,25 +17,25 @@ import {
  */
 export const PoolForm: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
 
   return (
-    <Page>
-      <PageSection variant="default">
+    <Page style={{ height: "100%", width: "100%" }}>
+      <PageSection variant="default" style={{ width: "100%" }}>
         <Title headingLevel="h1" size="2xl">
-          Create Pool
+          {t('Create Pool')}
         </Title>
       </PageSection>
-      <PageSection>
+      <PageSection style={{ width: "100%" }}>
         <EmptyState>
           <Title headingLevel="h4" size="lg">
-            Pool Form Not Yet Implemented
+            {t('Pool Form Not Yet Implemented')}
           </Title>
           <EmptyStateBody>
-            The pool creation form is not yet implemented. Please use kubectl or oc to create
-            pools.
+            {t('The pool creation form is not yet implemented. Please use kubectl or oc to create pools.')}
           </EmptyStateBody>
           <Button variant="primary" onClick={() => navigate('/vcm/pools')}>
-            Back to Pools
+            {t('Back to {{resource}}', { resource: t('Pools') })}
           </Button>
         </EmptyState>
       </PageSection>

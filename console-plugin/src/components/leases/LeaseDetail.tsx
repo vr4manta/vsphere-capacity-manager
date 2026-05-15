@@ -68,8 +68,8 @@ export const LeaseDetail: React.FC = () => {
   const hasMultiplePools = poolInfo.length > 1;
 
   return (
-    <Page>
-      <PageSection variant="default">
+    <Page style={{ height: "100%", width: "100%" }}>
+      <PageSection variant="default" style={{ width: "100%" }}>
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <FlexItem>
             <Title headingLevel="h1" size="2xl">
@@ -85,14 +85,14 @@ export const LeaseDetail: React.FC = () => {
       </PageSection>
 
       {deleteError && (
-        <PageSection>
+        <PageSection style={{ width: "100%" }}>
           <Alert variant="danger" title="Delete failed" isInline>
             {deleteError}
           </Alert>
         </PageSection>
       )}
 
-      <PageSection>
+      <PageSection style={{ flex: 1, width: "100%" }}>
         <Grid hasGutter>
           {/* Status Card */}
           <GridItem span={12}>

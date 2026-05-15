@@ -70,8 +70,8 @@ export const LeaseList: React.FC = () => {
   ];
 
   return (
-    <Page>
-      <PageSection variant="default">
+    <Page style={{ height: "100%", width: "100%" }}>
+      <PageSection variant="default" style={{ width: "100%" }}>
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <FlexItem>
             <Title headingLevel="h1" size="2xl">
@@ -85,7 +85,7 @@ export const LeaseList: React.FC = () => {
           </FlexItem>
         </Flex>
       </PageSection>
-      <PageSection>
+      <PageSection style={{ width: "100%" }}>
         <ResourceList
           data={leases}
           columns={columns}

@@ -3,6 +3,9 @@
 
 import type { Extension } from '@openshift-console/dynamic-plugin-sdk/lib/types';
 
+// Initialize i18n for the plugin
+import './i18n';
+
 const extensions: Extension[] = [
   // Navigation section
   {
