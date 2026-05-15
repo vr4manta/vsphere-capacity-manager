@@ -209,13 +209,68 @@ console-plugin/
 
 3. **Color contrast** - Use PatternFly's color system which meets WCAG 2.1 AA standards.
 
+## Component Structure Patterns
+
+### Page Layout Pattern (CRITICAL)
+
+**DO NOT use PatternFly's `<Page>` component in plugin pages.** The OpenShift Console already provides the page wrapper. Using `<Page>` will break the layout and cause content to not fill the available width.
+
+✅ **CORRECT - Use ListPageHeader + PageSection:**
+```tsx
+import { ListPageHeader } from '@openshift-console/dynamic-plugin-sdk';
+import { PageSection, Button } from '@patternfly/react-core';
+
+export const PoolList: React.FC = () => {
+  return (
+    <>
+      <ListPageHeader title="Pools">
+        <Button variant="primary">Create Pool</Button>
+      </ListPageHeader>
+      <PageSection>
+        {/* Your content here */}
+      </PageSection>
+    </>
+  );
+};
+```
+
+❌ **WRONG - Do not use Page wrapper:**
+```tsx
+import { Page, PageSection, Title, Flex } from '@patternfly/react-core';
+
+export const PoolList: React.FC = () => {
+  return (
+    <Page>  {/* ❌ This breaks the layout! */}
+      <PageSection>
+        <Flex>
+          <Title>Pools</Title>
+          <Button>Create Pool</Button>
+        </Flex>
+      </PageSection>
+      <PageSection>
+        {/* Content appears right-justified instead of full width */}
+      </PageSection>
+    </Page>
+  );
+};
+```
+
+**Key points:**
+- Use `ListPageHeader` from `@openshift-console/dynamic-plugin-sdk` for page headers
+- Pass buttons/actions as children to `ListPageHeader`
+- Use `PageSection` directly without wrapping in `<Page>`
+- Return a fragment (`<>...</>`) as the root element
+- Do not add inline width/height styles - let the console handle layout
+- Reference: [OpenShift Console Plugin Template](https://github.com/openshift/console-plugin-template)
+
 ## Common Tasks
 
 ### Adding a New Page
 
 1. Create component in appropriate directory (e.g., `src/components/pools/NewPage.tsx`)
-2. Export component with named export: `export const NewPage: React.FC = () => { ... }`
-3. Add to `console-extensions.json`:
+2. Use the correct layout pattern with `ListPageHeader` (see "Page Layout Pattern" above)
+3. Export component with named export: `export const NewPage: React.FC = () => { ... }`
+4. Add to `console-extensions.json`:
    ```json
    {
      "type": "console.page/route",
@@ -226,11 +281,11 @@ console-plugin/
      }
    }
    ```
-4. Add to `package.json` exposedModules:
+5. Add to `package.json` exposedModules:
    ```json
    "NewPage": "./components/pools/NewPage"
    ```
-5. Optionally add navigation link in `console-extensions.json`
+6. Optionally add navigation link in `console-extensions.json`
 
 ### Adding a Custom Style
 
@@ -307,17 +362,21 @@ make deploy-plugin
 
 ## Pitfalls to Avoid
 
-1. **Don't use default exports** - Module Federation requires named exports.
+1. **Don't use PatternFly's `<Page>` component** - The OpenShift Console provides the page wrapper. Using `<Page>` breaks layout and causes content to not fill width. Use `ListPageHeader` + `PageSection` instead. See "Page Layout Pattern" section above.
 
-2. **Don't import from SDK internals** - Only import from `@openshift-console/dynamic-plugin-sdk`, not from internal paths.
+2. **Don't use default exports** - Module Federation requires named exports.
 
-3. **Don't mutate props or state** - Always create new objects/arrays instead of mutating.
+3. **Don't import from SDK internals** - Only import from `@openshift-console/dynamic-plugin-sdk`, not from internal paths.
 
-4. **Don't use inline styles for theming** - Use PatternFly CSS variables or component props instead of inline `style={{ color: '#fff' }}`.
+4. **Don't mutate props or state** - Always create new objects/arrays instead of mutating.
 
-5. **Don't forget error boundaries** - Wrap route components in error boundaries to prevent whole plugin crashes.
+5. **Don't use inline styles for theming** - Use PatternFly CSS variables or component props instead of inline `style={{ color: '#fff' }}`.
 
-6. **Don't skip accessibility** - Every interactive element needs proper labels and keyboard support.
+6. **Don't add inline width/height styles** - Let the OpenShift Console handle layout. Don't use `style={{ width: "100%", height: "100%" }}` on page components.
+
+7. **Don't forget error boundaries** - Wrap route components in error boundaries to prevent whole plugin crashes.
+
+8. **Don't skip accessibility** - Every interactive element needs proper labels and keyboard support.
 
 ## Resources
 

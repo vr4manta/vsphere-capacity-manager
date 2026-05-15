@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Page, PageSection, Title, Button, Flex, FlexItem } from '@patternfly/react-core';
+import { ListPageHeader } from '@openshift-console/dynamic-plugin-sdk';
+import { PageSection, Button } from '@patternfly/react-core';
 import { ResourceList, Column } from '../common/ResourceList';
 import { DarkStatusBadge, NetworkTypeBadge } from '../common/StatusBadge';
 import { useLeasesWatch } from '@hooks/useK8sWatchResource';
@@ -88,22 +89,13 @@ const LeaseListComponent: React.FC = () => {
   ];
 
   return (
-    <Page style={{ height: "100%", width: "100%" }}>
-      <PageSection variant="default" style={{ width: "100%" }}>
-        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
-          <FlexItem>
-            <Title headingLevel="h1" size="2xl">
-              {t('Leases')}
-            </Title>
-          </FlexItem>
-          <FlexItem>
-            <Button variant="primary" onClick={handleCreateClick} aria-label={t('Create Lease')}>
-              {t('Create Lease')}
-            </Button>
-          </FlexItem>
-        </Flex>
-      </PageSection>
-      <PageSection style={{ width: "100%" }}>
+    <>
+      <ListPageHeader title={t('Leases')}>
+        <Button variant="primary" onClick={handleCreateClick} aria-label={t('Create Lease')}>
+          {t('Create Lease')}
+        </Button>
+      </ListPageHeader>
+      <PageSection>
         <ResourceList
           data={leases}
           columns={columns}
@@ -114,7 +106,7 @@ const LeaseListComponent: React.FC = () => {
           onRowClick={handleRowClick}
         />
       </PageSection>
-    </Page>
+    </>
   );
 };
 

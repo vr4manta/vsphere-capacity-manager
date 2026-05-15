@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Page, PageSection, Title, Button, Flex, FlexItem } from '@patternfly/react-core';
+import { ListPageHeader } from '@openshift-console/dynamic-plugin-sdk';
+import { PageSection, Button } from '@patternfly/react-core';
 import { ResourceList, Column } from '../common/ResourceList';
 import { DarkStatusBadge } from '../common/StatusBadge';
 import { ProgressBar } from '../common/ProgressBar';
@@ -92,22 +93,13 @@ const PoolListComponent: React.FC = () => {
   ];
 
   return (
-    <Page style={{ height: "100%", width: "100%" }}>
-      <PageSection variant="default" style={{ width: "100%" }}>
-        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
-          <FlexItem>
-            <Title headingLevel="h1" size="2xl">
-              {t('Pools')}
-            </Title>
-          </FlexItem>
-          <FlexItem>
-            <Button variant="primary" onClick={handleCreateClick} aria-label={t('Create Pool')}>
-              {t('Create Pool')}
-            </Button>
-          </FlexItem>
-        </Flex>
-      </PageSection>
-      <PageSection style={{ width: "100%" }}>
+    <>
+      <ListPageHeader title={t('Pools')}>
+        <Button variant="primary" onClick={handleCreateClick} aria-label={t('Create Pool')}>
+          {t('Create Pool')}
+        </Button>
+      </ListPageHeader>
+      <PageSection>
         <ResourceList
           data={pools}
           columns={columns}
@@ -118,7 +110,7 @@ const PoolListComponent: React.FC = () => {
           onRowClick={handleRowClick}
         />
       </PageSection>
-    </Page>
+    </>
   );
 };
 

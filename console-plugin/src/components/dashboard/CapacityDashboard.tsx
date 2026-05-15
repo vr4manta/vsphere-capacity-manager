@@ -2,11 +2,10 @@ import * as React from 'react';
 import { useNavigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { useTranslation } from 'react-i18next';
+import { ListPageHeader } from '@openshift-console/dynamic-plugin-sdk';
 import { NAMESPACE } from '../../i18n';
 import {
-  Page,
   PageSection,
-  Title,
   Grid,
   GridItem,
   Card,
@@ -289,14 +288,9 @@ const CapacityDashboardInner: React.FC = () => {
       : [];
 
   return (
-    <Page style={{ height: "100%", width: "100%" }}>
-      <PageSection variant="default" style={{ width: "100%" }}>
-        <Title headingLevel="h1" size="2xl">
-          {t('vSphere Capacity Overview')}
-        </Title>
-      </PageSection>
-
-      <PageSection style={{ width: "100%" }}>
+    <>
+      <ListPageHeader title={t('vSphere Capacity Overview')} />
+      <PageSection>
         {/* Dashboard Overview Cards */}
         <Grid hasGutter>
           <GridItem span={12}>
@@ -374,7 +368,7 @@ const CapacityDashboardInner: React.FC = () => {
           </GridItem>
         </Grid>
       </PageSection>
-    </Page>
+    </>
   );
 };
 
