@@ -1,18 +1,22 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Page, PageSection, Title, Button, Flex, FlexItem } from '@patternfly/react-core';
 import { ResourceList, Column } from '../common/ResourceList';
-import { StatusBadge, NetworkTypeBadge } from '../common/StatusBadge';
+import { DarkStatusBadge, NetworkTypeBadge } from '../common/StatusBadge';
 import { useLeasesWatch } from '@hooks/useK8sWatchResource';
 import { Lease } from '@vcm-types/lease';
 import { formatTimestamp, formatCPUs, formatGB } from '@utils/formatting';
 import { VCM_NAMESPACE } from '@utils/constants';
+import { NAMESPACE } from '../../i18n';
+import { withErrorBoundary } from '../common/WithErrorBoundary';
 
 /**
  * LeaseList displays a table of all Lease resources
  */
-export const LeaseList: React.FC = () => {
+const LeaseListComponent: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
   const [leases, loaded, error] = useLeasesWatch();
 
   const handleRowClick = (lease: Lease) => {
@@ -25,44 +29,58 @@ export const LeaseList: React.FC = () => {
 
   const columns: Column<Lease>[] = [
     {
-      title: 'Name',
+      title: t('Name'),
       key: 'name',
       sortable: true,
       render: (lease) => lease.metadata.name || '-',
     },
     {
-      title: 'Phase',
+      title: t('Phase'),
       key: 'phase',
       sortable: true,
-      render: (lease) => <StatusBadge phase={lease.status?.phase} />,
+      filterable: false,
+      render: (lease) => {
+        const phase = lease.status?.phase;
+        if (!phase) return null;
+
+        const statusMap: { [key: string]: 'fulfilled' | 'pending' | 'failed' } = {
+          'Fulfilled': 'fulfilled',
+          'Pending': 'pending',
+          'Partial': 'pending',
+          'Failed': 'failed',
+        };
+
+        const status = statusMap[phase] || 'pending';
+        return <DarkStatusBadge status={status} label={phase.toUpperCase()} />;
+      },
     },
     {
-      title: 'vCPUs',
+      title: t('vCPUs'),
       key: 'vcpus',
       render: (lease) => formatCPUs(lease.spec.vcpus || 0),
     },
     {
-      title: 'Memory',
+      title: t('Memory (GB)'),
       key: 'memory',
       render: (lease) => formatGB(lease.spec.memory || 0),
     },
     {
-      title: 'Networks',
+      title: t('Networks'),
       key: 'networks',
       render: (lease) => lease.spec.networks || 0,
     },
     {
-      title: 'Pools',
+      title: t('Pools'),
       key: 'pools',
       render: (lease) => lease.spec.pools || 1,
     },
     {
-      title: 'Network Type',
+      title: t('Network Type'),
       key: 'networkType',
       render: (lease) => <NetworkTypeBadge networkType={lease.spec['network-type']} />,
     },
     {
-      title: 'Age',
+      title: t('Age'),
       key: 'age',
       sortable: true,
       render: (lease) => formatTimestamp(lease.metadata.creationTimestamp),
@@ -75,12 +93,12 @@ export const LeaseList: React.FC = () => {
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <FlexItem>
             <Title headingLevel="h1" size="2xl">
-              Leases
+              {t('Leases')}
             </Title>
           </FlexItem>
           <FlexItem>
-            <Button variant="primary" onClick={handleCreateClick}>
-              Create Lease
+            <Button variant="primary" onClick={handleCreateClick} aria-label={t('Create Lease')}>
+              {t('Create Lease')}
             </Button>
           </FlexItem>
         </Flex>
@@ -91,7 +109,7 @@ export const LeaseList: React.FC = () => {
           columns={columns}
           loading={!loaded}
           error={error}
-          emptyMessage="No leases found. Create a lease to allocate resources."
+          emptyMessage={t('No leases found.')}
           keyFn={(lease) => lease.metadata.uid || lease.metadata.name || ''}
           onRowClick={handleRowClick}
         />
@@ -99,3 +117,5 @@ export const LeaseList: React.FC = () => {
     </Page>
   );
 };
+
+export const LeaseList = withErrorBoundary(LeaseListComponent);

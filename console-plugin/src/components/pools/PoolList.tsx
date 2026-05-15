@@ -3,18 +3,19 @@ import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Page, PageSection, Title, Button, Flex, FlexItem } from '@patternfly/react-core';
 import { ResourceList, Column } from '../common/ResourceList';
-import { BooleanBadge } from '../common/StatusBadge';
-import { SimpleCapacityBar } from '../common/CapacityGauge';
+import { DarkStatusBadge } from '../common/StatusBadge';
+import { ProgressBar } from '../common/ProgressBar';
 import { usePoolsWatch } from '@hooks/useK8sWatchResource';
 import { Pool } from '@vcm-types/pool';
 import { formatResourceUsage } from '@utils/formatting';
 import { VCM_NAMESPACE } from '@utils/constants';
 import { NAMESPACE } from '../../i18n';
+import { withErrorBoundary } from '../common/WithErrorBoundary';
 
 /**
  * PoolList displays a table of all Pool resources
  */
-export const PoolList: React.FC = () => {
+const PoolListComponent: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation(NAMESPACE);
   const [pools, loaded, error] = usePoolsWatch();
@@ -43,25 +44,21 @@ export const PoolList: React.FC = () => {
       title: t('vCPUs'),
       key: 'vcpus',
       sortable: true,
-      render: (pool) => (
-        <SimpleCapacityBar
-          available={pool.status?.['vcpus-available'] || 0}
-          total={pool.spec.vcpus}
-          showPercentage={false}
-        />
-      ),
+      filterable: false,
+      render: (pool) => {
+        const used = pool.spec.vcpus - (pool.status?.['vcpus-available'] || 0);
+        return <ProgressBar used={used} total={pool.spec.vcpus} />;
+      },
     },
     {
       title: t('Memory (GB)'),
       key: 'memory',
       sortable: true,
-      render: (pool) => (
-        <SimpleCapacityBar
-          available={pool.status?.['memory-available'] || 0}
-          total={pool.spec.memory}
-          showPercentage={false}
-        />
-      ),
+      filterable: false,
+      render: (pool) => {
+        const used = pool.spec.memory - (pool.status?.['memory-available'] || 0);
+        return <ProgressBar used={used} total={pool.spec.memory} />;
+      },
     },
     {
       title: t('Networks'),
@@ -79,30 +76,18 @@ export const PoolList: React.FC = () => {
       render: (pool) => pool.status?.['lease-count'] || 0,
     },
     {
-      title: t('NoSchedule'),
-      key: 'noSchedule',
-      render: (pool) => (
-        <BooleanBadge
-          value={pool.spec.noSchedule || false}
-          trueLabel={t('Disabled')}
-          falseLabel={t('Enabled')}
-          trueColor="orange"
-          falseColor="green"
-        />
-      ),
-    },
-    {
-      title: t('Excluded'),
-      key: 'excluded',
-      render: (pool) => (
-        <BooleanBadge
-          value={pool.spec.exclude}
-          trueLabel={t('Yes')}
-          falseLabel={t('No')}
-          trueColor="grey"
-          falseColor="blue"
-        />
-      ),
+      title: t('Status'),
+      key: 'status',
+      filterable: false,
+      render: (pool) => {
+        if (pool.spec.exclude) {
+          return <DarkStatusBadge status="excluded" label="EXCLUDED" />;
+        }
+        if (pool.spec.noSchedule) {
+          return <DarkStatusBadge status="pending" label="CORDONED" />;
+        }
+        return <DarkStatusBadge status="active" label="ACTIVE" />;
+      },
     },
   ];
 
@@ -116,7 +101,7 @@ export const PoolList: React.FC = () => {
             </Title>
           </FlexItem>
           <FlexItem>
-            <Button variant="primary" onClick={handleCreateClick}>
+            <Button variant="primary" onClick={handleCreateClick} aria-label={t('Create Pool')}>
               {t('Create Pool')}
             </Button>
           </FlexItem>
@@ -136,3 +121,5 @@ export const PoolList: React.FC = () => {
     </Page>
   );
 };
+
+export const PoolList = withErrorBoundary(PoolListComponent);

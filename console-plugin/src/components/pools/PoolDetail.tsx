@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Page,
   PageSection,
@@ -26,12 +27,15 @@ import { CapacityGauge } from '../common/CapacityGauge';
 import { BooleanBadge } from '../common/StatusBadge';
 import { LoadingBox, ErrorBox } from '../common/ResourceList';
 import { formatResourceUsage } from '@utils/formatting';
+import { NAMESPACE } from '../../i18n';
+import { withErrorBoundary } from '../common/WithErrorBoundary';
 import type { Lease } from '@vcm-types/lease';
 import type { Taint } from '@vcm-types/common';
 
-export const PoolDetail: React.FC = () => {
+const PoolDetailComponent: React.FC = () => {
   const { name, namespace } = useParams<{ name: string; namespace: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
   const [pool, loaded, error] = usePoolWatch(name!, namespace);
   const [leases] = useLeasesWatch(namespace);
   const [deleting, setDeleting] = React.useState(false);
@@ -48,7 +52,7 @@ export const PoolDetail: React.FC = () => {
   }, [pool, leases]);
 
   const handleDelete = async () => {
-    if (!pool || !window.confirm(`Are you sure you want to delete pool "${pool.metadata.name}"?`)) {
+    if (!pool || !window.confirm(t('Are you sure you want to delete pool "{{name}}"?', { name: pool.metadata.name }))) {
       return;
     }
 
@@ -59,7 +63,7 @@ export const PoolDetail: React.FC = () => {
       await deletePool(pool.metadata.name!, namespace);
       navigate('/vcm/pools');
     } catch (err: any) {
-      setDeleteError(err.message || 'Failed to delete pool');
+      setDeleteError(err.message || t('Failed to delete pool'));
       setDeleting(false);
     }
   };
@@ -69,11 +73,11 @@ export const PoolDetail: React.FC = () => {
   };
 
   if (!loaded) {
-    return <LoadingBox message="Loading pool details..." />;
+    return <LoadingBox message={t('Loading pool details...')} />;
   }
 
   if (error || !pool) {
-    return <ErrorBox error={error} title="Error loading pool" />;
+    return <ErrorBox error={error} title={t('Error loading pool')} />;
   }
 
   return (
@@ -88,10 +92,10 @@ export const PoolDetail: React.FC = () => {
           <FlexItem>
             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
               <Button variant="primary" onClick={handleEdit}>
-                Edit
+                {t('Edit')}
               </Button>
               <Button variant="danger" onClick={handleDelete} isLoading={deleting}>
-                Delete
+                {t('Delete')}
               </Button>
             </Flex>
           </FlexItem>
@@ -100,7 +104,7 @@ export const PoolDetail: React.FC = () => {
 
       {deleteError && (
         <PageSection style={{ width: "100%" }}>
-          <Alert variant="danger" title="Delete failed" isInline>
+          <Alert variant="danger" title={t('Delete failed')} isInline>
             {deleteError}
           </Alert>
         </PageSection>
@@ -113,48 +117,48 @@ export const PoolDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  Overview
+                  {t('Overview')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal columnModifier={{ default: '2Col' }}>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Name</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Name')}</DescriptionListTerm>
                     <DescriptionListDescription>{pool.spec.name}</DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Short Name</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Short Name')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.spec.shortName || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Server</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Server')}</DescriptionListTerm>
                     <DescriptionListDescription>{pool.spec.server}</DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Region / Zone</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Region / Zone')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.spec.region} / {pool.spec.zone}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Excluded</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Excluded')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       <BooleanBadge value={pool.spec.exclude} />
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>NoSchedule</DescriptionListTerm>
+                    <DescriptionListTerm>{t('NoSchedule')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       <BooleanBadge
                         value={pool.spec.noSchedule || false}
-                        trueLabel="Disabled"
-                        falseLabel="Enabled"
+                        trueLabel={t('Disabled')}
+                        falseLabel={t('Enabled')}
                         trueColor="orange"
                         falseColor="green"
                       />
@@ -162,14 +166,14 @@ export const PoolDetail: React.FC = () => {
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Overcommit Ratio</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Overcommit Ratio')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.spec.overCommitRatio}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Active Leases</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Active Leases')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.status?.['lease-count'] || 0}
                     </DescriptionListDescription>
@@ -184,7 +188,7 @@ export const PoolDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  Capacity
+                  {t('Capacity')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <Grid hasGutter>
@@ -192,28 +196,28 @@ export const PoolDetail: React.FC = () => {
                     <CapacityGauge
                       available={pool.status?.['vcpus-available'] || 0}
                       total={pool.spec.vcpus}
-                      label="vCPUs"
+                      label={t('vCPUs')}
                     />
                   </GridItem>
                   <GridItem span={4}>
                     <CapacityGauge
                       available={pool.status?.['memory-available'] || 0}
                       total={pool.spec.memory}
-                      label="Memory (GB)"
+                      label={t('Memory (GB)')}
                     />
                   </GridItem>
                   <GridItem span={4}>
                     <CapacityGauge
                       available={pool.status?.['datastore-available'] || 0}
                       total={pool.spec.storage}
-                      label="Storage (GB)"
+                      label={t('Storage (GB)')}
                     />
                   </GridItem>
                 </Grid>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal columnModifier={{ default: '3Col' }}>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Networks</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Networks')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {formatResourceUsage(
                         pool.status?.['network-available'] || 0,
@@ -231,56 +235,56 @@ export const PoolDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  Topology
+                  {t('Topology')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal columnModifier={{ default: '2Col' }}>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Datacenter</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Datacenter')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.spec.topology?.datacenter || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Compute Cluster</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Compute Cluster')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.spec.topology?.computeCluster || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Datastore</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Datastore')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.spec.topology?.datastore || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Folder</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Folder')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.spec.topology?.folder || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Resource Pool</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Resource Pool')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.spec.topology?.resourcePool || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Template</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Template')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {pool.spec.topology?.template || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Networks</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Networks')}</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {pool.spec.topology?.networks?.length || 0} configured
+                      {t('{{count}} configured', { count: pool.spec.topology?.networks?.length || 0 })}
                       <div style={{ marginTop: '0.5rem' }}>
                         {pool.spec.topology?.networks?.map((network, idx) => (
                           <div key={idx} style={{ fontSize: '12px', color: '#6a6e73' }}>
@@ -301,7 +305,7 @@ export const PoolDetail: React.FC = () => {
               <Card>
                 <CardBody>
                   <Title headingLevel="h2" size="lg">
-                    Taints
+                    {t('Taints')}
                   </Title>
                   <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                   <Flex spaceItems={{ default: 'spaceItemsSm' }}>
@@ -322,20 +326,20 @@ export const PoolDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  Active Leases ({poolLeases.length})
+                  {t('Active Leases ({{count}})', { count: poolLeases.length })}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 {poolLeases.length === 0 ? (
-                  <p>No active leases using this pool.</p>
+                  <p>{t('No active leases using this pool.')}</p>
                 ) : (
-                  <Table aria-label="Active leases" variant="compact">
+                  <Table aria-label={t('Active leases')} variant="compact">
                     <Thead>
                       <Tr>
-                        <Th>Name</Th>
-                        <Th>Phase</Th>
-                        <Th>vCPUs</Th>
-                        <Th>Memory (GB)</Th>
-                        <Th>Networks</Th>
+                        <Th>{t('Name')}</Th>
+                        <Th>{t('Phase')}</Th>
+                        <Th>{t('vCPUs')}</Th>
+                        <Th>{t('Memory (GB)')}</Th>
+                        <Th>{t('Networks')}</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -359,3 +363,5 @@ export const PoolDetail: React.FC = () => {
     </Page>
   );
 };
+
+export const PoolDetail = withErrorBoundary(PoolDetailComponent);

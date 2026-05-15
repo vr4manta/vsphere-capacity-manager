@@ -22,16 +22,20 @@ import {
   CodeBlockCode,
 } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { useTranslation } from 'react-i18next';
+import { NAMESPACE } from '../../i18n';
 import { useLeaseWatch } from '@hooks/useK8sWatchResource';
 import { deleteLease } from '@api/k8s-client';
 import { StatusBadge, NetworkTypeBadge } from '../common/StatusBadge';
 import { LoadingBox, ErrorBox } from '../common/ResourceList';
 import { formatTimestamp, formatCPUs, formatGB } from '@utils/formatting';
+import { withErrorBoundary } from '../common/WithErrorBoundary';
 import type { Condition, Toleration } from '@vcm-types/common';
 
-export const LeaseDetail: React.FC = () => {
+const LeaseDetailComponent: React.FC = () => {
   const { name, namespace } = useParams<{ name: string; namespace: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
   const [lease, loaded, error] = useLeaseWatch(name!, namespace);
   const [deleting, setDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
@@ -39,7 +43,7 @@ export const LeaseDetail: React.FC = () => {
   const handleDelete = async () => {
     if (
       !lease ||
-      !window.confirm(`Are you sure you want to delete lease "${lease.metadata.name}"?`)
+      !window.confirm(t('Are you sure you want to delete {{resourceType}} "{{name}}"?', { resourceType: 'lease', name: lease.metadata.name }))
     ) {
       return;
     }
@@ -51,17 +55,17 @@ export const LeaseDetail: React.FC = () => {
       await deleteLease(lease.metadata.name!, namespace);
       navigate('/vcm/leases');
     } catch (err: any) {
-      setDeleteError(err.message || 'Failed to delete lease');
+      setDeleteError(err.message || t('Failed to delete {{resourceType}}', { resourceType: 'lease' }));
       setDeleting(false);
     }
   };
 
   if (!loaded) {
-    return <LoadingBox message="Loading lease details..." />;
+    return <LoadingBox message={t('Loading {{resource}} details...', { resource: 'lease' })} />;
   }
 
   if (error || !lease) {
-    return <ErrorBox error={error} title="Error loading lease" />;
+    return <ErrorBox error={error} title={t('Error loading {{resource}}', { resource: 'lease' })} />;
   }
 
   const poolInfo = lease.status?.poolInfo || [];
@@ -78,7 +82,7 @@ export const LeaseDetail: React.FC = () => {
           </FlexItem>
           <FlexItem>
             <Button variant="danger" onClick={handleDelete} isLoading={deleting}>
-              Delete
+              {t('Delete')}
             </Button>
           </FlexItem>
         </Flex>
@@ -86,7 +90,7 @@ export const LeaseDetail: React.FC = () => {
 
       {deleteError && (
         <PageSection style={{ width: "100%" }}>
-          <Alert variant="danger" title="Delete failed" isInline>
+          <Alert variant="danger" title={t('Delete failed')} isInline>
             {deleteError}
           </Alert>
         </PageSection>
@@ -99,26 +103,26 @@ export const LeaseDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  Status
+                  {t('Status')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal columnModifier={{ default: '3Col' }}>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Phase</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Phase')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       <StatusBadge phase={lease.status?.phase} />
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Age</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Age')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {formatTimestamp(lease.metadata.creationTimestamp)}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Job Link</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Job Link')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {lease.status?.['job-link'] ? (
                         <a
@@ -126,7 +130,7 @@ export const LeaseDetail: React.FC = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          View Job
+                          {t('View Job')}
                         </a>
                       ) : (
                         '-'
@@ -143,47 +147,47 @@ export const LeaseDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  Resource Requirements
+                  {t('Resource Requirements')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal columnModifier={{ default: '3Col' }}>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>vCPUs</DescriptionListTerm>
+                    <DescriptionListTerm>{t('vCPUs')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {formatCPUs(lease.spec.vcpus || 0)}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Memory</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Memory')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {formatGB(lease.spec.memory || 0)}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Storage</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Storage')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {formatGB(lease.spec.storage || 0)}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Networks</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Networks')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {lease.spec.networks || 0}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Network Type</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Network Type')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       <NetworkTypeBadge networkType={lease.spec['network-type']} />
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Number of Pools</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Number of Pools')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {lease.spec.pools || 1}
                     </DescriptionListDescription>
@@ -198,13 +202,13 @@ export const LeaseDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  Pool Selection
+                  {t('Pool Selection')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal columnModifier={{ default: '2Col' }}>
                   {lease.spec['required-pool'] && (
                     <DescriptionListGroup>
-                      <DescriptionListTerm>Required Pool</DescriptionListTerm>
+                      <DescriptionListTerm>{t('Required Pool')}</DescriptionListTerm>
                       <DescriptionListDescription>
                         <Label color="blue">{lease.spec['required-pool']}</Label>
                       </DescriptionListDescription>
@@ -213,7 +217,7 @@ export const LeaseDetail: React.FC = () => {
 
                   {lease.spec.poolSelector && Object.keys(lease.spec.poolSelector).length > 0 && (
                     <DescriptionListGroup>
-                      <DescriptionListTerm>Pool Selector</DescriptionListTerm>
+                      <DescriptionListTerm>{t('Pool Selector')}</DescriptionListTerm>
                       <DescriptionListDescription>
                         <Flex spaceItems={{ default: 'spaceItemsXs' }}>
                           {Object.entries(lease.spec.poolSelector).map(([key, value]) => (
@@ -228,7 +232,7 @@ export const LeaseDetail: React.FC = () => {
 
                   {lease.spec['boskos-lease-id'] && (
                     <DescriptionListGroup>
-                      <DescriptionListTerm>Boskos Lease ID</DescriptionListTerm>
+                      <DescriptionListTerm>{t('Boskos Lease ID')}</DescriptionListTerm>
                       <DescriptionListDescription>
                         {lease.spec['boskos-lease-id']}
                       </DescriptionListDescription>
@@ -245,16 +249,16 @@ export const LeaseDetail: React.FC = () => {
               <Card>
                 <CardBody>
                   <Title headingLevel="h2" size="lg">
-                    Tolerations ({lease.spec.tolerations.length})
+                    {t('Tolerations')} ({lease.spec.tolerations.length})
                   </Title>
                   <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                   <Table aria-label="Tolerations" variant="compact">
                     <Thead>
                       <Tr>
-                        <Th>Key</Th>
-                        <Th>Operator</Th>
-                        <Th>Value</Th>
-                        <Th>Effect</Th>
+                        <Th>{t('Key')}</Th>
+                        <Th>{t('Operator')}</Th>
+                        <Th>{t('Value')}</Th>
+                        <Th>{t('Effect')}</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -279,17 +283,17 @@ export const LeaseDetail: React.FC = () => {
               <Card>
                 <CardBody>
                   <Title headingLevel="h2" size="lg">
-                    Assigned Pools ({poolInfo.length})
+                    {t('Assigned Pools')} ({poolInfo.length})
                   </Title>
                   <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                   <Table aria-label="Assigned pools" variant="compact">
                     <Thead>
                       <Tr>
-                        <Th>Name</Th>
-                        <Th>Server</Th>
-                        <Th>Region / Zone</Th>
-                        <Th>Datacenter</Th>
-                        <Th>Short Name</Th>
+                        <Th>{t('Name')}</Th>
+                        <Th>{t('Server')}</Th>
+                        <Th>{t('Region / Zone')}</Th>
+                        <Th>{t('Datacenter')}</Th>
+                        <Th>{t('Short Name')}</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -317,7 +321,7 @@ export const LeaseDetail: React.FC = () => {
               <Card>
                 <CardBody>
                   <Title headingLevel="h2" size="lg">
-                    Environment Variables
+                    {t('Environment Variables')}
                   </Title>
                   <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                   {Object.entries(lease.status.envVarsMap).map(([poolName, envVars]) => (
@@ -343,18 +347,18 @@ export const LeaseDetail: React.FC = () => {
               <Card>
                 <CardBody>
                   <Title headingLevel="h2" size="lg">
-                    Conditions ({lease.status.conditions.length})
+                    {t('Conditions')} ({lease.status.conditions.length})
                   </Title>
                   <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                   <Table aria-label="Conditions" variant="compact">
                     <Thead>
                       <Tr>
-                        <Th>Type</Th>
-                        <Th>Status</Th>
-                        <Th>Severity</Th>
-                        <Th>Reason</Th>
-                        <Th>Message</Th>
-                        <Th>Last Transition</Th>
+                        <Th>{t('Type')}</Th>
+                        <Th>{t('Status')}</Th>
+                        <Th>{t('Severity')}</Th>
+                        <Th>{t('Reason')}</Th>
+                        <Th>{t('Message')}</Th>
+                        <Th>{t('Last Transition')}</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -395,3 +399,5 @@ export const LeaseDetail: React.FC = () => {
     </Page>
   );
 };
+
+export const LeaseDetail = withErrorBoundary(LeaseDetailComponent);

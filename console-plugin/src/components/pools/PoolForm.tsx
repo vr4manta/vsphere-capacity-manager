@@ -10,12 +10,13 @@ import {
   Button,
 } from '@patternfly/react-core';
 import { NAMESPACE } from '../../i18n';
+import { withErrorBoundary } from '../common/WithErrorBoundary';
 
 /**
  * PoolForm - placeholder for pool creation/editing
  * TODO: Implement full pool form wizard
  */
-export const PoolForm: React.FC = () => {
+const PoolFormComponent: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation(NAMESPACE);
 
@@ -34,7 +35,11 @@ export const PoolForm: React.FC = () => {
           <EmptyStateBody>
             {t('The pool creation form is not yet implemented. Please use kubectl or oc to create pools.')}
           </EmptyStateBody>
-          <Button variant="primary" onClick={() => navigate('/vcm/pools')}>
+          <Button
+            variant="primary"
+            onClick={() => navigate('/vcm/pools')}
+            aria-label={t('Back to {{resource}}', { resource: t('Pools') })}
+          >
             {t('Back to {{resource}}', { resource: t('Pools') })}
           </Button>
         </EmptyState>
@@ -42,3 +47,5 @@ export const PoolForm: React.FC = () => {
     </Page>
   );
 };
+
+export const PoolForm = withErrorBoundary(PoolFormComponent);

@@ -1,16 +1,20 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Page, PageSection, Title, Button, Flex, FlexItem } from '@patternfly/react-core';
 import { ResourceList, Column } from '../common/ResourceList';
 import { useNetworksWatch } from '@hooks/useK8sWatchResource';
 import { Network } from '@vcm-types/network';
 import { NETWORK_TYPE_LABEL, VCM_NAMESPACE } from '@utils/constants';
+import { NAMESPACE } from '../../i18n';
+import { withErrorBoundary } from '../common/WithErrorBoundary';
 
 /**
  * NetworkList displays a table of all Network resources
  */
-export const NetworkList: React.FC = () => {
+const NetworkListComponent: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
   const [networks, loaded, error] = useNetworksWatch();
 
   const handleRowClick = (network: Network) => {
@@ -23,35 +27,35 @@ export const NetworkList: React.FC = () => {
 
   const columns: Column<Network>[] = [
     {
-      title: 'Name',
+      title: t('Name'),
       key: 'name',
       sortable: true,
       render: (network) => network.metadata.name || '-',
     },
     {
-      title: 'Port Group',
+      title: t('Port Group'),
       key: 'portGroup',
       sortable: true,
       render: (network) => network.spec.portGroupName || '-',
     },
     {
-      title: 'VLAN ID',
+      title: t('VLAN ID'),
       key: 'vlanId',
       render: (network) => network.spec.vlanId || '-',
     },
     {
-      title: 'Pod',
+      title: t('Pod'),
       key: 'pod',
       render: (network) => network.spec.podName || '-',
     },
     {
-      title: 'Datacenter',
+      title: t('Datacenter'),
       key: 'datacenter',
       sortable: true,
       render: (network) => network.spec.datacenterName || '-',
     },
     {
-      title: 'CIDR',
+      title: t('CIDR'),
       key: 'cidr',
       render: (network) => {
         if (network.spec.cidr) {
@@ -61,12 +65,12 @@ export const NetworkList: React.FC = () => {
       },
     },
     {
-      title: 'IP Addresses',
+      title: t('IP Addresses'),
       key: 'ipCount',
       render: (network) => network.spec.ipAddressCount || network.spec.ipAddresses?.length || 0,
     },
     {
-      title: 'Network Type',
+      title: t('Network Type'),
       key: 'networkType',
       render: (network) => {
         const typeLabel = network.metadata.labels?.[NETWORK_TYPE_LABEL];
@@ -81,12 +85,12 @@ export const NetworkList: React.FC = () => {
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <FlexItem>
             <Title headingLevel="h1" size="2xl">
-              Networks
+              {t('Networks')}
             </Title>
           </FlexItem>
           <FlexItem>
             <Button variant="primary" onClick={handleCreateClick}>
-              Create Network
+              {t('Create Network')}
             </Button>
           </FlexItem>
         </Flex>
@@ -97,7 +101,7 @@ export const NetworkList: React.FC = () => {
           columns={columns}
           loading={!loaded}
           error={error}
-          emptyMessage="No networks found. Create a network to get started."
+          emptyMessage={t('No networks found. Create a network to get started.')}
           keyFn={(network) => network.metadata.uid || network.metadata.name || ''}
           onRowClick={handleRowClick}
         />
@@ -105,3 +109,5 @@ export const NetworkList: React.FC = () => {
     </Page>
   );
 };
+
+export const NetworkList = withErrorBoundary(NetworkListComponent);

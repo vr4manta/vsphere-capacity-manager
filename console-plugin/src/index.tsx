@@ -6,6 +6,9 @@ import type { Extension } from '@openshift-console/dynamic-plugin-sdk/lib/types'
 // Initialize i18n for the plugin
 import './i18n';
 
+// Import dark theme styling
+import './styles/dark-theme.scss';
+
 const extensions: Extension[] = [
   // Navigation section
   {

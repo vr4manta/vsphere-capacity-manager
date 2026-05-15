@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Page,
   PageSection,
@@ -23,10 +24,12 @@ import { useNetworkWatch } from '@hooks/useK8sWatchResource';
 import { deleteNetwork } from '@api/k8s-client';
 import { LoadingBox, ErrorBox } from '../common/ResourceList';
 import { NETWORK_TYPE_LABEL } from '@utils/constants';
+import { NAMESPACE } from '../../i18n';
 
 export const NetworkDetail: React.FC = () => {
   const { name, namespace } = useParams<{ name: string; namespace: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
   const [network, loaded, error] = useNetworkWatch(name!, namespace);
   const [deleting, setDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
@@ -34,7 +37,7 @@ export const NetworkDetail: React.FC = () => {
   const handleDelete = async () => {
     if (
       !network ||
-      !window.confirm(`Are you sure you want to delete network "${network.metadata.name}"?`)
+      !window.confirm(t('Are you sure you want to delete network "{{name}}"?', { name: network.metadata.name }))
     ) {
       return;
     }
@@ -46,7 +49,7 @@ export const NetworkDetail: React.FC = () => {
       await deleteNetwork(network.metadata.name!, namespace);
       navigate('/vcm/networks');
     } catch (err: any) {
-      setDeleteError(err.message || 'Failed to delete network');
+      setDeleteError(err.message || t('Failed to delete network'));
       setDeleting(false);
     }
   };
@@ -56,11 +59,11 @@ export const NetworkDetail: React.FC = () => {
   };
 
   if (!loaded) {
-    return <LoadingBox message="Loading network details..." />;
+    return <LoadingBox message={t('Loading network details...')} />;
   }
 
   if (error || !network) {
-    return <ErrorBox error={error} title="Error loading network" />;
+    return <ErrorBox error={error} title={t('Error loading network')} />;
   }
 
   const networkType = network.metadata.labels?.[NETWORK_TYPE_LABEL] || 'default';
@@ -77,10 +80,10 @@ export const NetworkDetail: React.FC = () => {
           <FlexItem>
             <Flex spaceItems={{ default: 'spaceItemsSm' }}>
               <Button variant="primary" onClick={handleEdit}>
-                Edit
+                {t('Edit')}
               </Button>
               <Button variant="danger" onClick={handleDelete} isLoading={deleting}>
-                Delete
+                {t('Delete')}
               </Button>
             </Flex>
           </FlexItem>
@@ -89,7 +92,7 @@ export const NetworkDetail: React.FC = () => {
 
       {deleteError && (
         <PageSection style={{ width: "100%" }}>
-          <Alert variant="danger" title="Delete failed" isInline>
+          <Alert variant="danger" title={t('Delete failed')} isInline>
             {deleteError}
           </Alert>
         </PageSection>
@@ -102,47 +105,47 @@ export const NetworkDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  Basic Information
+                  {t('Basic Information')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal columnModifier={{ default: '2Col' }}>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Port Group Name</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Port Group Name')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.portGroupName || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>VLAN ID</DescriptionListTerm>
+                    <DescriptionListTerm>{t('VLAN ID')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.vlanId || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Network Type</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Network Type')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       <Label color="blue">{networkType}</Label>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Pod Name</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Pod Name')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.podName || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Datacenter Name</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Datacenter Name')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.datacenterName || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Subnet Type</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Subnet Type')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.subnetType || '-'}
                     </DescriptionListDescription>
@@ -157,40 +160,40 @@ export const NetworkDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  IPv4 Configuration
+                  {t('IPv4 Configuration')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>CIDR</DescriptionListTerm>
+                    <DescriptionListTerm>{t('CIDR')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.cidr || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Gateway</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Gateway')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.gateway || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Netmask</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Netmask')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.netmask || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Machine Network CIDR</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Machine Network CIDR')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.machineNetworkCidr || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>IP Address Count</DescriptionListTerm>
+                    <DescriptionListTerm>{t('IP Address Count')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.ipAddressCount || network.spec.ipAddresses?.length || 0}
                     </DescriptionListDescription>
@@ -205,33 +208,33 @@ export const NetworkDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  IPv6 Configuration
+                  {t('IPv6 Configuration')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>CIDR IPv6</DescriptionListTerm>
+                    <DescriptionListTerm>{t('CIDR IPv6')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.cidrIPv6 || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Gateway IPv6</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Gateway IPv6')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.gatewayipv6 || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>IPv6 Prefix</DescriptionListTerm>
+                    <DescriptionListTerm>{t('IPv6 Prefix')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.ipv6prefix || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Start IPv6 Address</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Start IPv6 Address')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.startIPv6Address || '-'}
                     </DescriptionListDescription>
@@ -247,7 +250,7 @@ export const NetworkDetail: React.FC = () => {
               <Card>
                 <CardBody>
                   <Title headingLevel="h2" size="lg">
-                    IP Addresses ({network.spec.ipAddresses.length})
+                    {t('IP Addresses ({{count}})', { count: network.spec.ipAddresses.length })}
                   </Title>
                   <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                   <div
@@ -283,7 +286,7 @@ export const NetworkDetail: React.FC = () => {
               <Card>
                 <CardBody>
                   <Title headingLevel="h2" size="lg">
-                    Nameservers ({network.spec.nameservers.length})
+                    {t('Nameservers ({{count}})', { count: network.spec.nameservers.length })}
                   </Title>
                   <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                   <Flex spaceItems={{ default: 'spaceItemsSm' }}>
@@ -303,26 +306,26 @@ export const NetworkDetail: React.FC = () => {
             <Card>
               <CardBody>
                 <Title headingLevel="h2" size="lg">
-                  Additional Information
+                  {t('Additional Information')}
                 </Title>
                 <Divider style={{ marginTop: '1rem', marginBottom: '1rem' }} />
                 <DescriptionList isHorizontal columnModifier={{ default: '2Col' }}>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Primary Router Hostname</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Primary Router Hostname')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.spec.primaryRouterHostname || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Namespace</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Namespace')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.metadata.namespace || '-'}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Created</DescriptionListTerm>
+                    <DescriptionListTerm>{t('Created')}</DescriptionListTerm>
                     <DescriptionListDescription>
                       {network.metadata.creationTimestamp
                         ? new Date(network.metadata.creationTimestamp).toLocaleString()
@@ -331,7 +334,7 @@ export const NetworkDetail: React.FC = () => {
                   </DescriptionListGroup>
 
                   <DescriptionListGroup>
-                    <DescriptionListTerm>UID</DescriptionListTerm>
+                    <DescriptionListTerm>{t('UID')}</DescriptionListTerm>
                     <DescriptionListDescription
                       style={{ fontFamily: 'monospace', fontSize: '12px' }}
                     >

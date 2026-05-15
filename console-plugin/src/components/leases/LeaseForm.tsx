@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Page,
   PageSection,
@@ -21,12 +22,15 @@ import {
 import { useLeaseWatch } from '@hooks/useK8sWatchResource';
 import { createLease, updateLease } from '@api/k8s-client';
 import { VCM_NAMESPACE } from '@utils/constants';
+import { NAMESPACE } from '../../i18n';
+import { withErrorBoundary } from '../common/WithErrorBoundary';
 import type { Lease } from '@vcm-types/lease';
 import type { NetworkType, Toleration, TolerationOperator } from '@vcm-types/common';
 
-export const LeaseForm: React.FC = () => {
+const LeaseFormComponent: React.FC = () => {
   const { name, namespace = VCM_NAMESPACE } = useParams<{ name?: string; namespace?: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
   const isEdit = !!name;
   const [existingLease, loaded] = useLeaseWatch(name!, namespace);
 
@@ -163,7 +167,7 @@ export const LeaseForm: React.FC = () => {
 
       navigate('/vcm/leases');
     } catch (err: any) {
-      setSubmitError(err.message || `Failed to ${isEdit ? 'update' : 'create'} lease`);
+      setSubmitError(err.message || t(`Failed to ${isEdit ? 'update' : 'create'} lease`));
       setSubmitting(false);
     }
   };
@@ -172,7 +176,7 @@ export const LeaseForm: React.FC = () => {
     <Page style={{ height: "100%", width: "100%" }}>
       <PageSection variant="default" style={{ width: "100%" }}>
         <Title headingLevel="h1" size="2xl">
-          {isEdit ? 'Edit Lease' : 'Create Lease'}
+          {isEdit ? t('Edit Lease') : t('Create Lease')}
         </Title>
       </PageSection>
 
@@ -180,7 +184,7 @@ export const LeaseForm: React.FC = () => {
         {submitError && (
           <Alert
             variant="danger"
-            title="Submission failed"
+            title={t('Submission failed')}
             isInline
             style={{ marginBottom: '1rem' }}
             aria-live="assertive"
@@ -193,11 +197,11 @@ export const LeaseForm: React.FC = () => {
           <Card>
             <CardBody>
               <Title headingLevel="h3" size="lg">
-                Basic Information
+                {t('Basic Information')}
               </Title>
 
               {!isEdit && (
-                <FormGroup label="Resource Name" isRequired fieldId="metadata-name">
+                <FormGroup label={t('Resource Name')} isRequired fieldId="metadata-name">
                   <TextInput
                     id="metadata-name"
                     value={metadataName}
@@ -212,12 +216,12 @@ export const LeaseForm: React.FC = () => {
           <Card style={{ marginTop: '1rem' }}>
             <CardBody>
               <Title headingLevel="h3" size="lg">
-                Resource Requirements
+                {t('Resource Requirements')}
               </Title>
 
               <Grid hasGutter>
                 <GridItem span={6}>
-                  <FormGroup label="vCPUs" fieldId="vcpus">
+                  <FormGroup label={t('vCPUs')} fieldId="vcpus">
                     <NumberInput
                       id="vcpus"
                       value={vcpus}
@@ -228,13 +232,13 @@ export const LeaseForm: React.FC = () => {
                       }}
                       onPlus={() => setVcpus(vcpus + 1)}
                       min={0}
-                      aria-label="Number of vCPUs"
+                      aria-label={t('Number of vCPUs')}
                     />
                   </FormGroup>
                 </GridItem>
 
                 <GridItem span={6}>
-                  <FormGroup label="Memory (GB)" fieldId="memory">
+                  <FormGroup label={t('Memory (GB)')} fieldId="memory">
                     <NumberInput
                       id="memory"
                       value={memory}
@@ -245,7 +249,7 @@ export const LeaseForm: React.FC = () => {
                       }}
                       onPlus={() => setMemory(memory + 1)}
                       min={0}
-                      aria-label="Memory in gigabytes"
+                      aria-label={t('Memory in gigabytes')}
                     />
                   </FormGroup>
                 </GridItem>
@@ -253,7 +257,7 @@ export const LeaseForm: React.FC = () => {
 
               <Grid hasGutter>
                 <GridItem span={6}>
-                  <FormGroup label="Storage (GB)" fieldId="storage">
+                  <FormGroup label={t('Storage (GB)')} fieldId="storage">
                     <NumberInput
                       id="storage"
                       value={storage}
@@ -269,7 +273,7 @@ export const LeaseForm: React.FC = () => {
                 </GridItem>
 
                 <GridItem span={6}>
-                  <FormGroup label="Networks" isRequired fieldId="networks">
+                  <FormGroup label={t('Networks')} isRequired fieldId="networks">
                     <NumberInput
                       id="networks"
                       value={networks}
@@ -287,7 +291,7 @@ export const LeaseForm: React.FC = () => {
 
               <Grid hasGutter>
                 <GridItem span={6}>
-                  <FormGroup label="Number of Pools" fieldId="pools">
+                  <FormGroup label={t('Number of Pools')} fieldId="pools">
                     <NumberInput
                       id="pools"
                       value={pools}
@@ -303,7 +307,7 @@ export const LeaseForm: React.FC = () => {
                 </GridItem>
 
                 <GridItem span={6}>
-                  <FormGroup label="Network Type" fieldId="network-type">
+                  <FormGroup label={t('Network Type')} fieldId="network-type">
                     <select
                       id="network-type"
                       value={networkType}
@@ -316,12 +320,12 @@ export const LeaseForm: React.FC = () => {
                         borderRadius: '3px',
                       }}
                     >
-                      <option value="">Default</option>
-                      <option value="single-tenant">Single Tenant</option>
-                      <option value="multi-tenant">Multi Tenant</option>
-                      <option value="disconnected">Disconnected</option>
-                      <option value="nested-multi-tenant">Nested Multi Tenant</option>
-                      <option value="public-ipv6">Public IPv6</option>
+                      <option value="">{t('Default')}</option>
+                      <option value="single-tenant">{t('Single Tenant')}</option>
+                      <option value="multi-tenant">{t('Multi Tenant')}</option>
+                      <option value="disconnected">{t('Disconnected')}</option>
+                      <option value="nested-multi-tenant">{t('Nested Multi Tenant')}</option>
+                      <option value="public-ipv6">{t('Public IPv6')}</option>
                     </select>
                   </FormGroup>
                 </GridItem>
@@ -332,19 +336,19 @@ export const LeaseForm: React.FC = () => {
           <Card style={{ marginTop: '1rem' }}>
             <CardBody>
               <Title headingLevel="h3" size="lg">
-                Pool Selection
+                {t('Pool Selection')}
               </Title>
 
-              <FormGroup label="Required Pool" fieldId="required-pool">
+              <FormGroup label={t('Required Pool')} fieldId="required-pool">
                 <TextInput
                   id="required-pool"
                   value={requiredPool}
                   onChange={(_, value) => setRequiredPool(value)}
-                  placeholder="pool-name (leave empty for automatic selection)"
+                  placeholder={t('pool-name (leave empty for automatic selection)')}
                 />
               </FormGroup>
 
-              <FormGroup label="Pool Selector (key=value pairs, one per line)" fieldId="pool-selector">
+              <FormGroup label={t('Pool Selector (key=value pairs, one per line)')} fieldId="pool-selector">
                 <TextArea
                   id="pool-selector"
                   value={poolSelectorInput}
@@ -354,12 +358,12 @@ export const LeaseForm: React.FC = () => {
                 />
               </FormGroup>
 
-              <FormGroup label="Boskos Lease ID" fieldId="boskos-lease-id">
+              <FormGroup label={t('Boskos Lease ID')} fieldId="boskos-lease-id">
                 <TextInput
                   id="boskos-lease-id"
                   value={boskosLeaseId}
                   onChange={(_, value) => setBoskosLeaseId(value)}
-                  placeholder="Optional Boskos lease ID"
+                  placeholder={t('Optional Boskos lease ID')}
                 />
               </FormGroup>
             </CardBody>
@@ -368,13 +372,13 @@ export const LeaseForm: React.FC = () => {
           <Card style={{ marginTop: '1rem' }}>
             <CardBody>
               <Title headingLevel="h3" size="lg">
-                Tolerations
+                {t('Tolerations')}
               </Title>
 
               <Grid hasGutter>
                 <GridItem span={3}>
                   <TextInput
-                    placeholder="Key (empty = all)"
+                    placeholder={t('Key (empty = all)')}
                     value={tolerationKey}
                     onChange={(_, value) => setTolerationKey(value)}
                   />
@@ -391,27 +395,27 @@ export const LeaseForm: React.FC = () => {
                       borderRadius: '3px',
                     }}
                   >
-                    <option value="Equal">Equal</option>
-                    <option value="Exists">Exists</option>
+                    <option value="Equal">{t('Equal')}</option>
+                    <option value="Exists">{t('Exists')}</option>
                   </select>
                 </GridItem>
                 <GridItem span={3}>
                   <TextInput
-                    placeholder="Value"
+                    placeholder={t('Value')}
                     value={tolerationValue}
                     onChange={(_, value) => setTolerationValue(value)}
                   />
                 </GridItem>
                 <GridItem span={2}>
                   <TextInput
-                    placeholder="Effect (empty = all)"
+                    placeholder={t('Effect (empty = all)')}
                     value={tolerationEffect}
                     onChange={(_, value) => setTolerationEffect(value)}
                   />
                 </GridItem>
                 <GridItem span={2}>
                   <Button onClick={addToleration} isBlock>
-                    Add
+                    {t('Add')}
                   </Button>
                 </GridItem>
               </Grid>
@@ -431,11 +435,11 @@ export const LeaseForm: React.FC = () => {
                         }}
                       >
                         <span style={{ fontSize: '14px' }}>
-                          {toleration.key || '(all)'}:{toleration.operator || 'Equal'}:
-                          {toleration.value || '-'}:{toleration.effect || '(all)'}
+                          {toleration.key || t('(all)')}:{toleration.operator || t('Equal')}:
+                          {toleration.value || '-'}:{toleration.effect || t('(all)')}
                         </span>
                         <Button variant="link" isDanger onClick={() => removeToleration(idx)}>
-                          Remove
+                          {t('Remove')}
                         </Button>
                       </div>
                     ))}
@@ -448,7 +452,7 @@ export const LeaseForm: React.FC = () => {
           <Flex justifyContent={{ default: 'justifyContentFlexEnd' }} style={{ marginTop: '2rem' }}>
             <FlexItem>
               <Button variant="link" onClick={() => navigate('/vcm/leases')}>
-                Cancel
+                {t('Cancel')}
               </Button>
             </FlexItem>
             <FlexItem>
@@ -458,7 +462,7 @@ export const LeaseForm: React.FC = () => {
                 isLoading={submitting}
                 isDisabled={!isEdit && !metadataName}
               >
-                {isEdit ? 'Update' : 'Create'}
+                {isEdit ? t('Update') : t('Create')}
               </Button>
             </FlexItem>
           </Flex>
@@ -467,3 +471,5 @@ export const LeaseForm: React.FC = () => {
     </Page>
   );
 };
+
+export const LeaseForm = withErrorBoundary(LeaseFormComponent);

@@ -37,12 +37,19 @@ export const NetworkModel = {
   label: 'Network',
 };
 
-// Phase colors
+// Phase colors - matching reference app design
 export const PHASE_COLORS = {
   Fulfilled: 'green',
-  Pending: 'gold',
+  Pending: 'orange',
   Partial: 'orange',
   Failed: 'red',
+} as const;
+
+// Status colors for pool states
+export const STATUS_COLORS = {
+  active: 'green',
+  excluded: 'grey',
+  cordoned: 'orange',
 } as const;
 
 // Network type labels

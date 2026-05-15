@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Table,
   Thead,
@@ -16,12 +17,17 @@ import {
   Title,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
+import { NAMESPACE } from '../../i18n';
+import { ColumnFilter } from './ColumnFilter';
+import '../../styles/dark-theme.scss';
 
 export interface Column<T> {
   title: string;
   key: string;
   render?: (item: T, index: number) => React.ReactNode;
   sortable?: boolean;
+  filterable?: boolean;
+  filterValue?: (item: T) => string;
 }
 
 export interface ResourceListProps<T> {
@@ -43,15 +49,44 @@ export function ResourceList<T>({
   columns,
   loading = false,
   error = null,
-  emptyMessage = 'No resources found',
+  emptyMessage,
   keyFn,
   onRowClick,
   className,
 }: ResourceListProps<T>) {
+  const { t } = useTranslation(NAMESPACE);
   const [sortBy, setSortBy] = React.useState<{
     index: number;
     direction: 'asc' | 'desc';
   }>({ index: 0, direction: 'asc' });
+  const [filters, setFilters] = React.useState<{ [key: string]: string }>({});
+
+  // Filter data based on column filters
+  const filteredData = React.useMemo(() => {
+    if (!data) return [];
+
+    return data.filter((item) => {
+      return columns.every((column) => {
+        const filterValue = filters[column.key];
+        if (!filterValue || !column.filterable) return true;
+
+        const itemValue = column.filterValue
+          ? column.filterValue(item)
+          : column.render
+          ? String(column.render(item, 0))
+          : '';
+
+        return itemValue.toLowerCase().includes(filterValue.toLowerCase());
+      });
+    });
+  }, [data, filters, columns]);
+
+  const handleFilterChange = (columnKey: string, value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [columnKey]: value,
+    }));
+  };
 
   // Handle sort
   const onSort = (
@@ -92,9 +127,9 @@ export function ResourceList<T>({
       <EmptyState>
         <SearchIcon />
         <Title headingLevel="h4" size="lg">
-          Error loading resources
+          {t('Error loading resources')}
         </Title>
-        <EmptyStateBody>{error.message || 'An error occurred'}</EmptyStateBody>
+        <EmptyStateBody>{error.message || t('An error occurred')}</EmptyStateBody>
       </EmptyState>
     );
   }
@@ -105,26 +140,40 @@ export function ResourceList<T>({
       <EmptyState>
         <SearchIcon />
         <Title headingLevel="h4" size="lg">
-          No resources
+          {t('No resources')}
         </Title>
-        <EmptyStateBody>{emptyMessage}</EmptyStateBody>
+        <EmptyStateBody>{emptyMessage || t('No resources found')}</EmptyStateBody>
       </EmptyState>
     );
   }
 
   return (
-    <Table aria-label="Resource list" variant="compact" className={className}>
-      <Thead>
-        <Tr>
-          {columns.map((column, index) => (
-            <Th key={column.key} sort={getSortParams(index)}>
-              {column.title}
-            </Th>
-          ))}
-        </Tr>
-      </Thead>
-      <Tbody>
-        {data.map((item, rowIndex) => (
+    <div className="vsphere-capacity-manager__dark-theme">
+      <Table aria-label={t('Resource list')} variant="compact" className={className}>
+        <Thead>
+          <Tr>
+            {columns.map((column, index) => (
+              <Th key={column.key} sort={getSortParams(index)}>
+                {column.title}
+              </Th>
+            ))}
+          </Tr>
+          <Tr>
+            {columns.map((column) => (
+              <Th key={`filter-${column.key}`}>
+                {column.filterable !== false && (
+                  <ColumnFilter
+                    value={filters[column.key] || ''}
+                    onChange={(value) => handleFilterChange(column.key, value)}
+                    placeholder="Filter..."
+                  />
+                )}
+              </Th>
+            ))}
+          </Tr>
+        </Thead>
+        <Tbody>
+          {filteredData.map((item, rowIndex) => (
           <Tr
             key={keyFn(item)}
             onRowClick={onRowClick ? () => onRowClick(item) : undefined}
@@ -139,6 +188,7 @@ export function ResourceList<T>({
         ))}
       </Tbody>
     </Table>
+    </div>
   );
 }
 
@@ -149,13 +199,15 @@ export interface LoadingBoxProps {
 /**
  * Simple loading component
  */
-export const LoadingBox: React.FC<LoadingBoxProps> = ({ message = 'Loading...' }) => {
+export const LoadingBox: React.FC<LoadingBoxProps> = ({ message }) => {
+  const { t } = useTranslation(NAMESPACE);
+
   return (
     <Bullseye>
       <EmptyState>
         <Spinner size="xl" />
         <Title headingLevel="h4" size="lg">
-          {message}
+          {message || t('Loading...')}
         </Title>
       </EmptyState>
     </Bullseye>
@@ -170,17 +222,16 @@ export interface ErrorBoxProps {
 /**
  * Simple error display component
  */
-export const ErrorBox: React.FC<ErrorBoxProps> = ({
-  error,
-  title = 'Error loading resources',
-}) => {
+export const ErrorBox: React.FC<ErrorBoxProps> = ({ error, title }) => {
+  const { t } = useTranslation(NAMESPACE);
+
   return (
     <EmptyState>
       <SearchIcon />
       <Title headingLevel="h4" size="lg">
-        {title}
+        {title || t('Error loading resources')}
       </Title>
-      <EmptyStateBody>{error?.message || 'An error occurred'}</EmptyStateBody>
+      <EmptyStateBody>{error?.message || t('An error occurred')}</EmptyStateBody>
     </EmptyState>
   );
 };

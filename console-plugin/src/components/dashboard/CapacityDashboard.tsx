@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from 'react-query';
+import { useTranslation } from 'react-i18next';
+import { NAMESPACE } from '../../i18n';
 import {
   Page,
   PageSection,
@@ -33,6 +35,9 @@ import {
 } from '@hooks/usePrometheusQuery';
 import { parseInstantValue, parseRangeValues, sumInstantValues } from '@api/prometheus-client';
 import { formatCPUs, formatGB, formatUtilization } from '@utils/formatting';
+import { withErrorBoundary } from '../common/WithErrorBoundary';
+import { DashboardCard } from './DashboardCard';
+import { usePoolsWatch, useNetworksWatch } from '@hooks/useK8sWatchResource';
 
 // Create QueryClient instance for react-query
 const queryClient = new QueryClient({
@@ -73,6 +78,8 @@ const UtilizationChart: React.FC<{
   isLoading?: boolean;
   error?: Error | null;
 }> = ({ title, data, isLoading, error }) => {
+  const { t } = useTranslation(NAMESPACE);
+
   if (isLoading) {
     return (
       <Card>
@@ -91,7 +98,7 @@ const UtilizationChart: React.FC<{
       <Card>
         <CardTitle>{title}</CardTitle>
         <CardBody>
-          <Alert variant="warning" title="Failed to load chart data" isInline>
+          <Alert variant="warning" title={t('Failed to load chart data')} isInline>
             {error.message}
           </Alert>
         </CardBody>
@@ -105,7 +112,7 @@ const UtilizationChart: React.FC<{
         <CardTitle>{title}</CardTitle>
         <CardBody>
           <div style={{ textAlign: 'center', padding: '2rem', color: '#6a6e73' }}>
-            No data available
+            {t('No data available')}
           </div>
         </CardBody>
       </Card>
@@ -150,10 +157,12 @@ const NetworkTypeDonut: React.FC<{
   data: { [key: string]: number };
   isLoading?: boolean;
 }> = ({ data, isLoading }) => {
+  const { t } = useTranslation(NAMESPACE);
+
   if (isLoading) {
     return (
       <Card>
-        <CardTitle>Network Types</CardTitle>
+        <CardTitle>{t('Network Types')}</CardTitle>
         <CardBody>
           <Flex justifyContent={{ default: 'justifyContentCenter' }} style={{ padding: '2rem' }}>
             <Spinner size="lg" />
@@ -173,10 +182,10 @@ const NetworkTypeDonut: React.FC<{
   if (total === 0) {
     return (
       <Card>
-        <CardTitle>Network Types</CardTitle>
+        <CardTitle>{t('Network Types')}</CardTitle>
         <CardBody>
           <div style={{ textAlign: 'center', padding: '2rem', color: '#6a6e73' }}>
-            No networks available
+            {t('No networks available')}
           </div>
         </CardBody>
       </Card>
@@ -185,11 +194,11 @@ const NetworkTypeDonut: React.FC<{
 
   return (
     <Card>
-      <CardTitle>Network Types</CardTitle>
+      <CardTitle>{t('Network Types')}</CardTitle>
       <CardBody>
         <div style={{ height: '250px' }}>
           <ChartDonut
-            ariaTitle="Network type distribution"
+            ariaTitle={t('Network type distribution')}
             constrainToVisibleArea
             data={chartData}
             height={250}
@@ -200,7 +209,7 @@ const NetworkTypeDonut: React.FC<{
               right: 140,
               top: 20,
             }}
-            subTitle="Networks"
+            subTitle={t('Networks')}
             title={total.toString()}
             themeColor={ChartThemeColor.multiOrdered}
           />
@@ -212,6 +221,11 @@ const NetworkTypeDonut: React.FC<{
 
 const CapacityDashboardInner: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
+
+  // Watch K8s resources
+  const [pools, poolsLoaded] = usePoolsWatch();
+  const [networks, networksLoaded] = useNetworksWatch();
 
   // Fetch all metrics
   const {
@@ -244,6 +258,15 @@ const CapacityDashboardInner: React.FC = () => {
   const partialCount = partialLeases.data ? sumInstantValues(partialLeases.data) : 0;
   const totalLeases = fulfilledCount + pendingCount + failedCount + partialCount;
 
+  // Calculate pool counts
+  const totalPools = pools?.length || 0;
+  const activePools = pools?.filter(p => !p.spec.noSchedule && !p.spec.exclude).length || 0;
+  const cordonedPools = pools?.filter(p => p.spec.noSchedule).length || 0;
+  const excludedPools = pools?.filter(p => p.spec.exclude).length || 0;
+
+  // Calculate network count
+  const totalNetworks = networks?.length || 0;
+
   // Parse network type stats
   const networkTypeData: { [key: string]: number } = {};
   if (networkTypeStats.data?.data?.result) {
@@ -268,104 +291,59 @@ const CapacityDashboardInner: React.FC = () => {
   return (
     <Page style={{ height: "100%", width: "100%" }}>
       <PageSection variant="default" style={{ width: "100%" }}>
-        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
-          <FlexItem>
-            <Title headingLevel="h1" size="2xl">
-              vSphere Capacity Overview
-            </Title>
-          </FlexItem>
-          <FlexItem>
-            <Flex>
-              <FlexItem>
-                <Button variant="primary" onClick={() => navigate('/vcm/leases/new')}>
-                  Create Lease
-                </Button>
-              </FlexItem>
-              <FlexItem>
-                <Button variant="secondary" onClick={() => navigate('/vcm/pools/new')}>
-                  Create Pool
-                </Button>
-              </FlexItem>
-            </Flex>
-          </FlexItem>
-        </Flex>
+        <Title headingLevel="h1" size="2xl">
+          {t('vSphere Capacity Overview')}
+        </Title>
       </PageSection>
 
       <PageSection style={{ width: "100%" }}>
-        {/* Aggregate Capacity Metrics */}
+        {/* Dashboard Overview Cards */}
         <Grid hasGutter>
-          <GridItem span={4}>
-            <MetricCard
-              title="Total vCPUs"
-              value={formatCPUs(totalVCPUsValue)}
-              subtitle={`${formatCPUs(usedVCPUsValue)} used (${formatUtilization(
-                usedVCPUsValue,
-                totalVCPUsValue,
-              )})`}
-              isLoading={totalVCPUs.isLoading || usedVCPUs.isLoading}
-            />
-          </GridItem>
-          <GridItem span={4}>
-            <MetricCard
-              title="Total Memory"
-              value={formatGB(totalMemoryValue)}
-              subtitle={`${formatGB(usedMemoryValue)} used (${formatUtilization(
-                usedMemoryValue,
-                totalMemoryValue,
-              )})`}
-              isLoading={totalMemory.isLoading || usedMemory.isLoading}
-            />
-          </GridItem>
-          <GridItem span={4}>
-            <MetricCard
-              title="Total Storage"
-              value={formatGB(totalStorageValue)}
-              subtitle={`${formatGB(usedStorageValue)} used (${formatUtilization(
-                usedStorageValue,
-                totalStorageValue,
-              )})`}
-              isLoading={totalStorage.isLoading || usedStorage.isLoading}
-            />
-          </GridItem>
-        </Grid>
-
-        {/* Lease Statistics */}
-        <Grid hasGutter style={{ marginTop: '1.5rem' }}>
-          <GridItem span={3}>
-            <MetricCard
-              title="Active Leases"
-              value={totalLeases.toString()}
-              isLoading={
-                fulfilledLeases.isLoading ||
-                pendingLeases.isLoading ||
-                failedLeases.isLoading ||
-                partialLeases.isLoading
-              }
-            />
-          </GridItem>
-          <GridItem span={3}>
-            <MetricCard
-              title="Fulfilled"
-              value={fulfilledCount.toString()}
-              subtitle="Fully allocated"
-              isLoading={fulfilledLeases.isLoading}
-            />
-          </GridItem>
-          <GridItem span={3}>
-            <MetricCard
-              title="Pending"
-              value={pendingCount.toString()}
-              subtitle="Awaiting resources"
-              isLoading={pendingLeases.isLoading}
-            />
-          </GridItem>
-          <GridItem span={3}>
-            <MetricCard
-              title="Partial"
-              value={partialCount.toString()}
-              subtitle="Partially allocated"
-              isLoading={partialLeases.isLoading}
-            />
+          <GridItem span={12}>
+            <Grid hasGutter style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+              <GridItem>
+                <DashboardCard
+                  title="POOLS"
+                  count={totalPools}
+                  badges={[
+                    { label: 'active', count: activePools, color: 'green' },
+                    { label: 'cordoned', count: cordonedPools, color: 'orange' },
+                    { label: 'excluded', count: excludedPools, color: 'red' },
+                  ]}
+                  linkText="View Pools"
+                  linkTo="/vcm/pools"
+                  isLoading={!poolsLoaded}
+                />
+              </GridItem>
+              <GridItem>
+                <DashboardCard
+                  title="LEASES"
+                  count={totalLeases}
+                  badges={[
+                    { label: 'fulfilled', count: fulfilledCount, color: 'green' },
+                    { label: 'pending', count: pendingCount, color: 'orange' },
+                    { label: 'failed', count: failedCount, color: 'red' },
+                  ]}
+                  linkText="View Leases"
+                  linkTo="/vcm/leases"
+                  isLoading={
+                    fulfilledLeases.isLoading ||
+                    pendingLeases.isLoading ||
+                    failedLeases.isLoading ||
+                    partialLeases.isLoading
+                  }
+                />
+              </GridItem>
+              <GridItem>
+                <DashboardCard
+                  title="NETWORKS"
+                  count={totalNetworks}
+                  linkText="View Networks"
+                  linkTo="/vcm/networks"
+                  isLoading={!networksLoaded}
+                />
+              </GridItem>
+            </Grid>
           </GridItem>
         </Grid>
 
@@ -373,7 +351,7 @@ const CapacityDashboardInner: React.FC = () => {
         <Grid hasGutter style={{ marginTop: '1.5rem' }}>
           <GridItem span={6}>
             <UtilizationChart
-              title="CPU Utilization (Last Hour)"
+              title={t('CPU Utilization (Last Hour)')}
               data={cpuUtilizationData}
               isLoading={cpuUtilization.isLoading}
               error={cpuUtilization.error}
@@ -381,7 +359,7 @@ const CapacityDashboardInner: React.FC = () => {
           </GridItem>
           <GridItem span={6}>
             <UtilizationChart
-              title="Memory Utilization (Last Hour)"
+              title={t('Memory Utilization (Last Hour)')}
               data={memoryUtilizationData}
               isLoading={memoryUtilization.isLoading}
               error={memoryUtilization.error}
@@ -401,10 +379,12 @@ const CapacityDashboardInner: React.FC = () => {
 };
 
 // Wrap the component with QueryClientProvider for react-query
-export const CapacityDashboard: React.FC = () => {
+const CapacityDashboardWithProvider: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <CapacityDashboardInner />
     </QueryClientProvider>
   );
 };
+
+export const CapacityDashboard = withErrorBoundary(CapacityDashboardWithProvider);

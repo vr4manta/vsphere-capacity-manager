@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Page,
   PageSection,
@@ -20,11 +21,14 @@ import {
 import { useNetworkWatch } from '@hooks/useK8sWatchResource';
 import { createNetwork, updateNetwork } from '@api/k8s-client';
 import { VCM_NAMESPACE, NETWORK_TYPE_LABEL } from '@utils/constants';
+import { NAMESPACE } from '../../i18n';
+import { withErrorBoundary } from '../common/WithErrorBoundary';
 import type { Network } from '@vcm-types/network';
 
-export const NetworkForm: React.FC = () => {
+const NetworkFormComponent: React.FC = () => {
   const { name, namespace = VCM_NAMESPACE } = useParams<{ name?: string; namespace?: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation(NAMESPACE);
   const isEdit = !!name;
   const [existingNetwork, loaded] = useNetworkWatch(name!, namespace);
 
@@ -111,7 +115,7 @@ export const NetworkForm: React.FC = () => {
 
       navigate('/vcm/networks');
     } catch (err: any) {
-      setSubmitError(err.message || `Failed to ${isEdit ? 'update' : 'create'} network`);
+      setSubmitError(err.message || t(`Failed to ${isEdit ? 'update' : 'create'} network`));
       setSubmitting(false);
     }
   };
@@ -120,13 +124,13 @@ export const NetworkForm: React.FC = () => {
     <Page style={{ height: "100%", width: "100%" }}>
       <PageSection variant="default" style={{ width: "100%" }}>
         <Title headingLevel="h1" size="2xl">
-          {isEdit ? 'Edit Network' : 'Create Network'}
+          {isEdit ? t('Edit Network') : t('Create Network')}
         </Title>
       </PageSection>
 
       <PageSection style={{ width: "100%" }}>
         {submitError && (
-          <Alert variant="danger" title="Submission failed" isInline style={{ marginBottom: '1rem' }}>
+          <Alert variant="danger" title={t('Submission failed')} isInline style={{ marginBottom: '1rem' }}>
             {submitError}
           </Alert>
         )}
@@ -135,11 +139,11 @@ export const NetworkForm: React.FC = () => {
           <Card>
             <CardBody>
               <Title headingLevel="h3" size="lg">
-                Basic Information
+                {t('Basic Information')}
               </Title>
 
               {!isEdit && (
-                <FormGroup label="Resource Name" isRequired fieldId="metadata-name">
+                <FormGroup label={t('Resource Name')} isRequired fieldId="metadata-name">
                   <TextInput
                     id="metadata-name"
                     value={metadataName}
@@ -151,7 +155,7 @@ export const NetworkForm: React.FC = () => {
 
               <Grid hasGutter>
                 <GridItem span={6}>
-                  <FormGroup label="Port Group Name" isRequired fieldId="port-group">
+                  <FormGroup label={t('Port Group Name')} isRequired fieldId="port-group">
                     <TextInput
                       id="port-group"
                       value={portGroupName}
@@ -162,7 +166,7 @@ export const NetworkForm: React.FC = () => {
                 </GridItem>
 
                 <GridItem span={6}>
-                  <FormGroup label="VLAN ID" isRequired fieldId="vlan-id">
+                  <FormGroup label={t('VLAN ID')} isRequired fieldId="vlan-id">
                     <TextInput
                       id="vlan-id"
                       value={vlanId}
@@ -175,7 +179,7 @@ export const NetworkForm: React.FC = () => {
 
               <Grid hasGutter>
                 <GridItem span={6}>
-                  <FormGroup label="Pod Name" fieldId="pod-name">
+                  <FormGroup label={t('Pod Name')} fieldId="pod-name">
                     <TextInput
                       id="pod-name"
                       value={podName}
@@ -185,7 +189,7 @@ export const NetworkForm: React.FC = () => {
                 </GridItem>
 
                 <GridItem span={6}>
-                  <FormGroup label="Datacenter Name" fieldId="datacenter">
+                  <FormGroup label={t('Datacenter Name')} fieldId="datacenter">
                     <TextInput
                       id="datacenter"
                       value={datacenterName}
@@ -195,7 +199,7 @@ export const NetworkForm: React.FC = () => {
                 </GridItem>
               </Grid>
 
-              <FormGroup label="Network Type" isRequired fieldId="network-type">
+              <FormGroup label={t('Network Type')} isRequired fieldId="network-type">
                 <select
                   id="network-type"
                   value={networkType}
@@ -208,12 +212,12 @@ export const NetworkForm: React.FC = () => {
                     borderRadius: '3px',
                   }}
                 >
-                  <option value="">Default</option>
-                  <option value="single-tenant">Single Tenant</option>
-                  <option value="multi-tenant">Multi Tenant</option>
-                  <option value="disconnected">Disconnected</option>
-                  <option value="nested-multi-tenant">Nested Multi Tenant</option>
-                  <option value="public-ipv6">Public IPv6</option>
+                  <option value="">{t('Default')}</option>
+                  <option value="single-tenant">{t('Single Tenant')}</option>
+                  <option value="multi-tenant">{t('Multi Tenant')}</option>
+                  <option value="disconnected">{t('Disconnected')}</option>
+                  <option value="nested-multi-tenant">{t('Nested Multi Tenant')}</option>
+                  <option value="public-ipv6">{t('Public IPv6')}</option>
                 </select>
               </FormGroup>
             </CardBody>
@@ -222,12 +226,12 @@ export const NetworkForm: React.FC = () => {
           <Card style={{ marginTop: '1rem' }}>
             <CardBody>
               <Title headingLevel="h3" size="lg">
-                IPv4 Configuration
+                {t('IPv4 Configuration')}
               </Title>
 
               <Grid hasGutter>
                 <GridItem span={4}>
-                  <FormGroup label="CIDR Prefix" fieldId="cidr">
+                  <FormGroup label={t('CIDR Prefix')} fieldId="cidr">
                     <TextInput
                       id="cidr"
                       value={cidr}
@@ -239,7 +243,7 @@ export const NetworkForm: React.FC = () => {
                 </GridItem>
 
                 <GridItem span={4}>
-                  <FormGroup label="Gateway" fieldId="gateway">
+                  <FormGroup label={t('Gateway')} fieldId="gateway">
                     <TextInput
                       id="gateway"
                       value={gateway}
@@ -250,7 +254,7 @@ export const NetworkForm: React.FC = () => {
                 </GridItem>
 
                 <GridItem span={4}>
-                  <FormGroup label="Netmask" fieldId="netmask">
+                  <FormGroup label={t('Netmask')} fieldId="netmask">
                     <TextInput
                       id="netmask"
                       value={netmask}
@@ -261,7 +265,7 @@ export const NetworkForm: React.FC = () => {
                 </GridItem>
               </Grid>
 
-              <FormGroup label="IP Addresses" fieldId="ip-addresses">
+              <FormGroup label={t('IP Addresses')} fieldId="ip-addresses">
                 <TextArea
                   id="ip-addresses"
                   value={ipAddresses}
@@ -271,7 +275,7 @@ export const NetworkForm: React.FC = () => {
                 />
               </FormGroup>
 
-              <FormGroup label="Nameservers" fieldId="nameservers">
+              <FormGroup label={t('Nameservers')} fieldId="nameservers">
                 <TextArea
                   id="nameservers"
                   value={nameservers}
@@ -286,7 +290,7 @@ export const NetworkForm: React.FC = () => {
           <Flex justifyContent={{ default: 'justifyContentFlexEnd' }} style={{ marginTop: '2rem' }}>
             <FlexItem>
               <Button variant="link" onClick={() => navigate('/vcm/networks')}>
-                Cancel
+                {t('Cancel')}
               </Button>
             </FlexItem>
             <FlexItem>
@@ -296,7 +300,7 @@ export const NetworkForm: React.FC = () => {
                 isLoading={submitting}
                 isDisabled={!portGroupName || !vlanId || (!isEdit && !metadataName)}
               >
-                {isEdit ? 'Update' : 'Create'}
+                {isEdit ? t('Update') : t('Create')}
               </Button>
             </FlexItem>
           </Flex>
@@ -305,3 +309,5 @@ export const NetworkForm: React.FC = () => {
     </Page>
   );
 };
+
+export const NetworkForm = withErrorBoundary(NetworkFormComponent);
