@@ -293,51 +293,47 @@ const CapacityDashboardInner: React.FC = () => {
       <PageSection>
         {/* Dashboard Overview Cards */}
         <Grid hasGutter>
-          <GridItem span={12}>
-            <Grid hasGutter style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-              <GridItem>
-                <DashboardCard
-                  title="POOLS"
-                  count={totalPools}
-                  badges={[
-                    { label: 'active', count: activePools, color: 'green' },
-                    { label: 'cordoned', count: cordonedPools, color: 'orange' },
-                    { label: 'excluded', count: excludedPools, color: 'red' },
-                  ]}
-                  linkText="View Pools"
-                  linkTo="/vcm/pools"
-                  isLoading={!poolsLoaded}
-                />
-              </GridItem>
-              <GridItem>
-                <DashboardCard
-                  title="LEASES"
-                  count={totalLeases}
-                  badges={[
-                    { label: 'fulfilled', count: fulfilledCount, color: 'green' },
-                    { label: 'pending', count: pendingCount, color: 'orange' },
-                    { label: 'failed', count: failedCount, color: 'red' },
-                  ]}
-                  linkText="View Leases"
-                  linkTo="/vcm/leases"
-                  isLoading={
-                    fulfilledLeases.isLoading ||
-                    pendingLeases.isLoading ||
-                    failedLeases.isLoading ||
-                    partialLeases.isLoading
-                  }
-                />
-              </GridItem>
-              <GridItem>
-                <DashboardCard
-                  title="NETWORKS"
-                  count={totalNetworks}
-                  linkText="View Networks"
-                  linkTo="/vcm/networks"
-                  isLoading={!networksLoaded}
-                />
-              </GridItem>
-            </Grid>
+          <GridItem md={4} sm={12}>
+            <DashboardCard
+              title="POOLS"
+              count={totalPools}
+              badges={[
+                { label: 'active', count: activePools, color: 'green' },
+                { label: 'cordoned', count: cordonedPools, color: 'orange' },
+                { label: 'excluded', count: excludedPools, color: 'red' },
+              ]}
+              linkText="View Pools"
+              linkTo="/vcm/pools"
+              isLoading={!poolsLoaded}
+            />
+          </GridItem>
+          <GridItem md={4} sm={12}>
+            <DashboardCard
+              title="LEASES"
+              count={totalLeases}
+              badges={[
+                { label: 'fulfilled', count: fulfilledCount, color: 'green' },
+                { label: 'pending', count: pendingCount, color: 'orange' },
+                { label: 'failed', count: failedCount, color: 'red' },
+              ]}
+              linkText="View Leases"
+              linkTo="/vcm/leases"
+              isLoading={
+                fulfilledLeases.isLoading ||
+                pendingLeases.isLoading ||
+                failedLeases.isLoading ||
+                partialLeases.isLoading
+              }
+            />
+          </GridItem>
+          <GridItem md={4} sm={12}>
+            <DashboardCard
+              title="NETWORKS"
+              count={totalNetworks}
+              linkText="View Networks"
+              linkTo="/vcm/networks"
+              isLoading={!networksLoaded}
+            />
           </GridItem>
         </Grid>
 
